@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
@@ -1042,7 +1042,7 @@ function doScratch(){
   const en=G.enemy;
   G.busy=true;     // блокуємо керування ДО списання дії, щоб spend не запланував endTurn передчасно
   spend(2);        // дія списується незалежно від результату тапів (2 дії)
-  tapChallenge({title:'🐾 Котячі порізи — тисни ПРОБІЛ!', duration:2500, goal:10, sub:'Натискай ПРОБІЛ якнайшвидше!'})
+  tapChallenge({title:'🐾 Котячі порізи — тапай!', duration:2500, goal:10, sub:'Тап по екрану або клавіша — якнайшвидше!'})
     .then(res=>{
       const frac=clamp(res.taps/10,0,1);
       const dmg=Math.round(rollDmg(37)*frac*dmgMult(G.cat));
@@ -1415,6 +1415,9 @@ function tapChallenge({title,duration,goal,sub}){
     const onTap=()=>{ if(done)return; taps++; $('tapMeter').style.width=Math.min(100,100*taps/goal)+'%';
       if(taps>=goal) finish(); };
     btn.onclick=onTap;
+    $('ovTap').addEventListener('pointerdown',onTap);
+    const onKey=()=>{ if(!done) onTap(); };
+    document.addEventListener('keydown',onKey);
     const start=performance.now();
     const tick=setInterval(()=>{
       const t=performance.now()-start, left=clamp(1-t/duration,0,1);
@@ -1423,7 +1426,7 @@ function tapChallenge({title,duration,goal,sub}){
     },50);
     function finish(){
       if(done)return; done=true; clearInterval(tick);
-      btn.onclick=null; $('ovTap').classList.remove('show');
+      btn.onclick=null; $('ovTap').removeEventListener('pointerdown',onTap); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
       resolve({taps,success:taps>=goal});
     }
   });
@@ -2343,10 +2346,6 @@ function netRecv(data){
   }
 }
 
-/* keyboard: space to tap faster */
-document.addEventListener('keydown',e=>{
-  if(e.code==='Space' && $('ovTap').classList.contains('show')){ e.preventDefault(); $('tapBtn').click(); }
-});
 
 /* ============================================================
    АРКАДНА МУЗИКА — чіптюн через Web Audio API (без файлів)
