@@ -301,8 +301,8 @@
     background:#fff7e0;border:3px solid var(--wood);border-radius:12px;padding:8px 12px;
     transition:transform .08s,box-shadow .12s,background .12s;}
   .charcard:hover{transform:translateY(-2px);filter:brightness(1.03);}
-  .charcard.sel{border-color:var(--gold);background:#fffdf3;
-    box-shadow:0 0 0 3px var(--gold),0 4px 10px rgba(0,0,0,.3);}
+  .charcard.sel0{border-color:#3a7fff;background:#eef3ff;box-shadow:0 0 0 3px #3a7fff88,0 4px 10px rgba(0,0,40,.25);}
+  .charcard.sel1{border-color:#e03030;background:#fff0f0;box-shadow:0 0 0 3px #e0303088,0 4px 10px rgba(40,0,0,.25);}
   .charcard .cface{flex:0 0 auto;font-size:40px;line-height:1;filter:drop-shadow(0 3px 2px rgba(0,0,0,.3));}
   .charcard .cinfo{min-width:0;}
   .charcard .cinfo b{font-size:16px;}
@@ -487,12 +487,16 @@
   </div>
   <div class="center" style="margin-top:14px">
     <button class="btn gold" onclick="startMission()">▶ Грати (Місія 1)</button>
-    <button class="btn green" onclick="openPvp()">⚔️ PvP (1 пристрій)</button>
+    <button class="btn green" onclick="openPractice()">🥊 Практика</button>
     <button class="btn" onclick="toggleHelp(true)">📜 Як грати</button>
     <button class="btn" id="statsBtn" onclick="openStats()" style="display:none">📊 Мій профіль</button>
   </div>
   <div class="center" style="margin-top:4px">
     <button class="btn green" onclick="openOnline()">🌐 PvP онлайн</button>
+  </div>
+  <div class="center" style="margin-top:8px;border-top:1px dashed var(--wood);padding-top:8px" id="authMenuBtns">
+    <button class="btn" onclick="openAuth('login')" style="font-size:13px;opacity:.85">🔑 Увійти</button>
+    <button class="btn" onclick="openAuth('reg')" style="font-size:13px;opacity:.85">📝 Реєстрація</button>
   </div>
 </div>
 
@@ -972,7 +976,7 @@ function render(){
   $('catFx').innerHTML=fxIcons(cat);
   $('enFx').innerHTML=fxIcons(en);
   $('roundN').textContent=G.round;
-  $('turnLbl').textContent = G.mode==='pvp' ? (NET.online ? (G.active===NET.myIdx?'Твій хід':'Хід суперника') : ('Гравець '+(G.active+1))) : (G.turn==='cat' ? 'Хід Івана Готівки' : 'Хід ворога');
+  $('turnLbl').textContent = (G.mode==='pvp'||G.mode==='practice') ? (NET.online ? (G.active===NET.myIdx?'Твій хід':'Хід суперника') : (G.mode==='practice' ? (G.active===0?'Твій хід':'Хід ШІ') : ('Гравець '+(G.active+1)))) : (G.turn==='cat' ? 'Хід Івана Готівки' : 'Хід ворога');
   // pips
   let pips=''; for(let i=0;i<G.maxActions;i++) pips+='<span class="pip'+(i<G.actions?' on':'')+'"></span>';
   $('pips').innerHTML=pips;
@@ -1323,8 +1327,29 @@ function hurt(target, amount, bleed){
   pop(target,'-'+amount,'#ff5a4a');
   if(bleed) target.fx.bleed=true;
   render();
+  if(target.char&&target.char.key==='owl'&&target.hp>0&&Math.random()<0.15){
+    const _ctrDmg=Math.round(rollDmg(12)*(0.40+Math.random()*0.10));
+    const _ctrTgt=(G.mode==='pvp'||G.mode==='practice')?G.players[1-target.side]:G.cat;
+    if(_ctrTgt&&_ctrTgt.hp>0){
+      setTimeout(()=>{
+        if(!G||abort) return;
+        pop(target,'🪶','#90e0ef');
+        projectile(target,_ctrTgt,'🪶');
+        setTimeout(()=>{
+          if(!G||abort) return;
+          shake(_ctrTgt); _ctrTgt.hp=Math.max(0,_ctrTgt.hp-_ctrDmg);
+          pop(_ctrTgt,'-'+_ctrDmg,'#ff5a4a'); render();
+          log(target.name+': 🪶 Удар у відповідь — <b>'+_ctrDmg+'</b> урону!');
+          if(_ctrTgt.hp<=0){
+            if(G.mode==='pvp'||G.mode==='practice') endBattlePvp(target.side);
+            else endBattle(_ctrTgt.who==='en');
+          }
+        },370);
+      },300);
+    }
+  }
   if(target.hp<=0){ target.hp=0; render();
-    if(G.mode==='pvp') endBattlePvp(target.side===0?1:0);
+    if(G.mode==='pvp'||G.mode==='practice') endBattlePvp(target.side===0?1:0);
     else endBattle(target.who==='en'); }
 }
 function pop(u,text,color){
@@ -1574,7 +1599,7 @@ function afterAction(){
 }
 function endTurn(){
   if(!G||abort) return;
-  if(G.mode==='pvp'){ endTurnPvp(); return; }
+  if(G.mode==='pvp'||G.mode==='practice'){ endTurnPvp(); return; }
   if(G.turn!=='cat'||G.busy) return;
   G.selected=null;
   // decrement cat effects at end of cat turn
@@ -1871,6 +1896,7 @@ function tutorial(){
    ============================================================ */
 let abort=false;
 let pvpPick=[null,null];
+let pvpPractice=false;
 let _pickTimer=null;
 function startPickTimer(){
   stopPickTimer();
@@ -1910,7 +1936,7 @@ const CHARACTERS=[
   ]},
   { key:'owl', name:'Сова', emoji:'🦉', hp:70, move:10, passive:{id:'dodge', name:"💨 Ухил 25%: промахи від фіз. атак"}, abilities:[
     {id:'fall',   name:'🌑 Падіння', cost:2, type:'tap', dmg:45, range:3, goal:12, dur:2600},
-    {id:'feather',name:"🪶 Пір'я", cost:1, type:'damage', dmg:7, range:5, bleed:true, proj:'🪶'},
+    {id:'feather',name:"🪶 Пір'я", cost:1, type:'damage', dmg:12, range:5, bleed:true, proj:'🪶'},
   ]},
   { key:'rat', name:'Криса', emoji:'🐀', hp:111, move:2, abilities:[
     {id:'cheese', name:'🧀 Сир', cost:1, type:'damage', dmg:20, range:6, proj:'🧀'},
@@ -1923,16 +1949,18 @@ const CHARACTERS=[
 
 ];
 
-function openPvp(){
+function openPractice(){
+  pvpPractice=true;
   netClose();
   pvpPick=[null,null];
   $('menu').style.display='none';
   if($('pvpOnline')) $('pvpOnline').style.display='none';
-  if($('pvpSelectSub')) $('pvpSelectSub').textContent='Два гравці на одному пристрої. Оберіть бійців — і у бій!';
+  if($('pvpSelectSub')) $('pvpSelectSub').textContent='Обери свого бійця та суперника — ШІ грає за нього!';
   $('pvpSelect').style.display='block';
   renderPvpSelect();
 }
 function backToMenuFromPvp(){
+  pvpPractice=false;
   $('pvpSelect').style.display='none';
   $('menu').style.display='block';
 }
@@ -1942,10 +1970,10 @@ function renderPvpSelect(){
     const locked = NET.online && p!==NET.myIdx;
     if(box.parentElement){ box.parentElement.style.opacity=NET.online&&locked?'0.45':'1'; box.parentElement.style.filter=NET.online&&locked?'grayscale(60%)':'none'; }
     box.innerHTML=CHARACTERS.map(c=>{
-      const sel=pvpPick[p]===c.key;
+      const myPick=pvpPick[p]===c.key,otherPick=pvpPick[1-p]===c.key;
       const ab=c.abilities.map(a=>a.name).join(' · ');
       const click = locked ? '' : ' onclick="pickChar('+p+',\''+c.key+'\')"';
-      return '<div class="charcard'+(sel?' sel':'')+(locked?' locked':'')+'"'+click+'>'+
+      return '<div class="charcard'+( myPick?(p===0?' sel0':' sel1'):'' )+(locked?' locked':'')+'"'+click+'>'+
         '<div class="cface'+(c.key==='papa'?' papa-spr':c.key==='owl'?' owl-spr':'')+'">'+( c.key==='papa'||c.key==='owl'?'':c.emoji)+'</div>'+
         '<div class="cinfo"><b>'+c.name+'</b>'+
         '<small>❤️ '+c.hp+' · 🏃 рух '+c.move+'</small>'+
@@ -1954,8 +1982,9 @@ function renderPvpSelect(){
     box.querySelectorAll('.papa-spr').forEach(el=>el.appendChild(papaCanvas(40,'idle',false)));
     box.querySelectorAll('.owl-spr').forEach(el=>el.appendChild(owlCanvas(40,false)));
   }
-  if($('pvpP0title')) $('pvpP0title').textContent = '🔵 Гравець 1'+(NET.online&&NET.myIdx===0?' (ти)':'');
-  if($('pvpP1title')) $('pvpP1title').textContent = '🔴 Гравець 2'+(NET.online&&NET.myIdx===1?' (ти)':'');
+  const _h1s=$('pvpSelect').querySelector('h1'); if(_h1s) _h1s.textContent=pvpPractice?'🥊 Практика — вибір персонажів':'⚔️ PvP — ВИБІР ПЕРСОНАЖІВ';
+  if($('pvpP0title')) $('pvpP0title').textContent = pvpPractice ? '🔵 Ти' : ('🔵 Гравець 1'+(NET.online&&NET.myIdx===0?' (ти)':''));
+  if($('pvpP1title')) $('pvpP1title').textContent = pvpPractice ? '🤖 Суперник (ШІ)' : ('🔴 Гравець 2'+(NET.online&&NET.myIdx===1?' (ти)':''));
   const both = pvpPick[0]&&pvpPick[1];
   const btn=$('pvpStartBtn');
   if(NET.online && NET.myIdx!==0){
@@ -1993,18 +2022,18 @@ function startPvp(){
   $('pvpSelect').style.display='none';
   $('battle').style.display='block';
   const p0=makePvpUnit(pvpPick[0],0), p1=makePvpUnit(pvpPick[1],1);
-  G={ mode:'pvp', phase:'play', players:[p0,p1], cat:p0, enemy:p1,
+  G={ mode:pvpPractice?'practice':'pvp', phase:'play', players:[p0,p1], cat:p0, enemy:p1,
       active:0, round:1, actions:3, maxActions:3, selected:null, busy:false,
       anchors:[], knife:null };
   buildBoard();
-  $('missionBadge').textContent='⚔️ PvP — 2 гравці';
+  $('missionBadge').textContent=pvpPractice?'🥊 Практика':'⚔️ PvP — 2 гравці';
   $('voiceBtn').style.display=NET.online?'':'none';
   $('catName').textContent=p0.name;
   $('enName').textContent=p1.name;
   (function(){ const sf=(el,u,fl)=>{ el.textContent=''; if(u.char&&u.char.key==='papa') el.appendChild(papaCanvas(36,'idle',fl)); else if(u.char&&u.char.key==='owl') el.appendChild(owlCanvas(36,fl)); else if(typeof setPixel==='function') setPixel(el,u.emoji,40,22); else el.textContent=u.emoji; }; sf($('catFace'),p0,false); sf($('enFace'),p1,true); })();
   $('log').innerHTML='';
   placeUnits();
-  log('<b>1х1!</b> Гравець 1 ('+p0.name+') проти Гравця 2 ('+p1.name+')');
+  log(pvpPractice?('<b>Практика!</b> Ти ('+p0.name+') проти ШІ ('+p1.name+')'):'<b>1х1!</b> Гравець 1 ('+p0.name+') проти Гравця 2 ('+p1.name+')');
   if(NET.online){ showCoinFlip(p0,p1,()=>startPvpTurn(0)); } else { startPvpTurn(0); }
 }
 function startPvpTurn(idx){
@@ -2013,12 +2042,16 @@ function startPvpTurn(idx){
   const me=G.players[idx];
   if(me.fx.bleed){ me.hp-=4; pop(me,'-4','#ff5a4a'); log(me.name+' стікає кров\'ю: −4 HP.');
     if(me.hp<=0){ me.hp=0; render(); return endBattlePvp(1-idx); } }
+  if(G.mode==='practice' && idx===1){
+    setHint('🤖 Хід ШІ… ('+me.name+')'); render();
+    setTimeout(practiceAiTurn, 400); return;
+  }
   if(NET.online){
     setHint(idx===NET.myIdx
       ? ('<b>Твій хід!</b> '+(me.fx.fear>0?'😱 Переляк — рух заблоковано.':'Обери дію.'))
       : ('⏳ Хід суперника… ('+me.name+')'));
   } else {
-    setHint('Хід: <b>Гравець '+(idx+1)+'</b> — '+me.name+'. '+
+    setHint('Хід: <b>'+(G.mode==='practice'?'Ти':'Гравець '+(idx+1))+'</b> — '+me.name+'. '+
       (me.fx.fear>0?'😱 Переляк — рух заблоковано.':'Обери дію.'));
   }
   render();
@@ -2196,7 +2229,7 @@ function pvpAbility(ab){
   const d=cheb(me,foe);
   let base=ab.dmg;
   if(ab.scale) base=clamp(Math.round(10*d/7),2,10);
-  const dmg=Math.round(base*dmgMult(me));
+  const dmg=Math.round(rollDmg(base)*dmgMult(me));
   punch(me); clash(me,foe);
   if(ab.proj){
     projectile(me,foe,ab.proj);
@@ -2205,11 +2238,71 @@ function pvpAbility(ab){
   log(me.name+': '+ab.name+' — <b>'+dmg+'</b> урону'+(ab.bleed?' + 🩸':''));
   spend(ab.cost);
 }
-function endBattlePvp(winnerIdx){
+async function practiceAiTurn(){
+  if(!G||abort||G.mode!=='practice') return;
+  G.busy=true;
+  const ai=G.players[1], human=G.players[0];
+  for(let _i=0;_i<3 && G.phase!=='ended' && !abort && G.actions>0;_i++){
+    await sleep(680);
+    if(!G||abort||G.phase==='ended') return;
+    const d=cheb(ai,human);
+    const feared=ai.fx.fear>0;
+    if(!feared){
+      const buffAb=ai.char.abilities.find(a=>a.type==='buff'&&a.cost<=G.actions&&ai.buff.might<=0);
+      if(buffAb){ ai.buff.might=2; pop(ai,'⚡','#ffe066'); log(ai.name+': '+buffAb.name+' — заряджається!'); G.actions-=buffAb.cost; render(); continue; }
+      const fearAb=ai.char.abilities.find(a=>a.type==='fear'&&a.cost<=G.actions&&d<=a.range&&human.fx.fear===0);
+      if(fearAb){ punch(ai); human.fx.fear=1; pop(human,'😱','#ffd27a'); log(ai.name+': '+fearAb.name+' — суперник у переляку.'); G.actions-=fearAb.cost; render(); continue; }
+      const dmgAbs=ai.char.abilities.filter(a=>a.type!=='tap'&&a.type!=='buff'&&a.type!=='fear'&&a.cost<=G.actions&&(a.type==='boomerang'||(a.range&&cheb(ai,human)<=a.range))).sort((a,b)=>(b.dmg||30)-(a.dmg||30));
+      const ab=dmgAbs[0];
+      if(ab){
+        if(ab.type==='quake'){
+          const dmgQ=Math.round(rollDmg(ab.dmg)*dmgMult(ai));
+          if(d<=ab.range){ punch(ai); shake(human); clash(ai,human); hurt(human,dmgQ,false); log(ai.name+': '+ab.name+' — <b>'+dmgQ+'</b> урону!'); }
+          else log(ai.name+': '+ab.name+' — промах!');
+          G.actions-=ab.cost; render(); if(G&&G.phase==='ended') return; continue;
+        }
+        if(ab.type==='boomerang'){
+          let dmgB=Math.floor(Math.random()*31)+10;
+          const pb=ai.char.key==='papa'&&d<4; if(pb) dmgB=Math.round(dmgB*1.2);
+          punch(ai); clash(ai,human); projectile(ai,human,'💻');
+          await sleep(400); if(!G||abort||G.phase==='ended') return;
+          projectile(human,ai,'💻');
+          await sleep(400); if(!G||abort||G.phase==='ended') return;
+          shake(human); hurt(human,dmgB,false);
+          log(ai.name+': 💻 Ноутбук-бумеранг — <b>'+dmgB+'</b> урону!'+(pb?' 🔥':''));
+          G.actions-=ab.cost; render(); if(G&&G.phase==='ended') return; continue;
+        }
+        let base=ab.dmg;
+        if(ab.scale) base=clamp(Math.round(10*d/7),2,10);
+        const dmgA=Math.round(base*dmgMult(ai));
+        punch(ai); clash(ai,human);
+        if(ab.proj){
+          projectile(ai,human,ab.proj);
+          await sleep(370); if(!G||abort||G.phase==='ended') return;
+          shake(human); hurt(human,dmgA,ab.bleed);
+        } else { shake(human); hurt(human,dmgA,ab.bleed); }
+        log(ai.name+': '+ab.name+' — <b>'+dmgA+'</b> урону'+(ab.bleed?' + 🩸':''));
+        G.actions-=ab.cost; render(); if(G&&G.phase==='ended') return; continue;
+      }
+    }
+    if(!feared){
+      let best=null,bestD=Infinity;
+      for(let cy=0;cy<ROWS;cy++) for(let cx=0;cx<COLS;cx++){
+        if(cx===human.x&&cy===human.y) continue;
+        if(cx===ai.x&&cy===ai.y) continue;
+        if(cheb({x:cx,y:cy},ai)<=ai.move){ const nd=cheb({x:cx,y:cy},human); if(nd<bestD){bestD=nd;best={x:cx,y:cy};} }
+      }
+      if(best){ ai.x=best.x; ai.y=best.y; updateUnitPos(); G.actions--; render(); log(ai.name+' переміщується.'); continue; }
+    } else { log(ai.name+' у переляку — рух заблоковано.'); }
+    break;
+  }
+  await sleep(300);
+  if(G&&!abort&&G.phase!=='ended'){ G.busy=false; endTurnPvp(); }
+}function endBattlePvp(winnerIdx){
   if(!G||G.phase==='ended') return;
   G.phase='ended'; G.busy=true; clearHL();
   const w=G.players[winnerIdx];
-  const who = NET.online ? (winnerIdx===NET.myIdx?'Ти переміг! 🎉':'Суперник переміг.') : ('Гравець '+(winnerIdx+1)+' переміг!');
+  const who = NET.online ? (winnerIdx===NET.myIdx?'Ти переміг! 🎉':'Суперник переміг.') : G.mode==='practice' ? (winnerIdx===0?'Ти переміг! 🎉':'ШІ переміг.') : ('Гравець '+(winnerIdx+1)+' переміг!');
   const body = '<b>'+who+'</b><br>('+w.name+' '+w.emoji+')';
   if(NET.online){
     saveGameResult('online',winnerIdx===NET.myIdx?'win':'loss',G.players[1-NET.myIdx].name,(G.players[NET.myIdx].char||{}).name||'');
@@ -2272,6 +2365,7 @@ function _pn(uuid){ return new PubNub({ publishKey:PN_PUB, subscribeKey:PN_SUB, 
 
 /* ---------- відкрити онлайн-розділ ---------- */
 function openOnline(){
+  pvpPractice=false;
   netClose();
   $('menu').style.display='none';
   $('pvpSelect').style.display='none';
@@ -2632,6 +2726,7 @@ window.switchAuthTab=function(tab){
   document.getElementById('tabReg').classList.toggle('gold',!login);
   document.getElementById('authErr1').textContent='';
   document.getElementById('authErr2').textContent='';
+  const abd=document.getElementById('authMenuBtns');if(abd)abd.style.display='';
 };
 window.doLogin=async function(){
   const nick=(document.getElementById('loginName').value||'').trim();
@@ -2673,17 +2768,23 @@ function loginOk(nick,stats){
   badge.style.display='block';
   const sb=document.getElementById('statsBtn');if(sb)sb.style.display='';
   const ni=document.getElementById('nameInput');if(ni)ni.value=nick;
+  const ab=document.getElementById('authMenuBtns');if(ab)ab.style.display='none';
 }
 window.continueAsGuest=function(){
   window._user=null;localStorage.removeItem('mv_user');
   document.getElementById('authOverlay').style.display='none';
   document.getElementById('authUserBadge').style.display='none';
   const sb=document.getElementById('statsBtn');if(sb)sb.style.display='none';
+  const ab2=document.getElementById('authMenuBtns');if(ab2)ab2.style.display='';
+};
+window.openAuth=function(tab){
+
+  if(typeof switchAuthTab==='function') switchAuthTab(tab||'login');
 };
 window.doLogout=function(){
   window._user=null;localStorage.removeItem('mv_user');
   document.getElementById('statsOverlay').classList.remove('show');
-  document.getElementById('authOverlay').style.display='flex';
+
   document.getElementById('authUserBadge').style.display='none';
   const sb=document.getElementById('statsBtn');if(sb)sb.style.display='none';
   document.querySelectorAll('#loginPin input,#regPin input').forEach(i=>i.value='');
@@ -2691,6 +2792,7 @@ window.doLogout=function(){
   document.getElementById('regName').value='';
   document.getElementById('authErr1').textContent='';
   document.getElementById('authErr2').textContent='';
+  const abd=document.getElementById('authMenuBtns');if(abd)abd.style.display='';
 };
 window.saveGameResult=async function(mode,result,opponent,character){
   if(!window._user)return;
