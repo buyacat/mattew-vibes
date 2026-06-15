@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
@@ -325,10 +325,13 @@
   #coinOverlay{position:fixed;inset:0;background:rgba(10,5,20,.85);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;}
   .coin-scene{perspective:700px;}
   .coin{width:134px;height:134px;position:relative;transform-style:preserve-3d;}
-  .coin.spin{animation:cFlip 2s cubic-bezier(.35,0,.2,1) forwards;}
+  .coin.spin0{animation:cFlip0 2s cubic-bezier(.35,0,.2,1) forwards;}
+  .coin.spin1{animation:cFlip1 2s cubic-bezier(.35,0,.2,1) forwards;}
   .coin-face{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 36%,#ffe97a 18%,#d4a017 65%,#9a6b00 100%);border:5px solid #b8860b;box-shadow:0 0 32px #ffd70099,0 6px 22px rgba(0,0,0,.55);}
   .coin-face.back{transform:rotateY(180deg);}
-  @keyframes cFlip{0%{transform:rotateY(0)}65%{transform:rotateY(1260deg)}82%{transform:rotateY(1200deg)}92%{transform:rotateY(1230deg)}100%{transform:rotateY(1220deg)}}
+  /* spin0 → зупинка на передній грані (p0), spin1 → на задній (p1) */
+  @keyframes cFlip0{0%{transform:rotateY(0)}65%{transform:rotateY(1140deg)}82%{transform:rotateY(1060deg)}92%{transform:rotateY(1095deg)}100%{transform:rotateY(1080deg)}}
+  @keyframes cFlip1{0%{transform:rotateY(0)}65%{transform:rotateY(1320deg)}82%{transform:rotateY(1240deg)}92%{transform:rotateY(1275deg)}100%{transform:rotateY(1260deg)}}
   .coin-avatar{width:80px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;}
   .coin-lbl{font-size:19px;font-weight:700;color:#fff;text-shadow:0 2px 12px #000;letter-spacing:.4px;min-height:30px;text-align:center;}
   /* ---------- PvP online lobby ---------- */
@@ -406,7 +409,28 @@
 .pin-input input{width:52px;height:62px;text-align:center;font-size:28px;font-weight:bold;font-family:'Courier New',monospace;background:#fff7e0;border:3px solid var(--wood);border-radius:10px;color:var(--ink);caret-color:transparent;outline:none;}
 .pin-input input:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(57,230,255,.25);}
 .auth-err{color:#e0473a;font-size:13px;min-height:18px;text-align:center;margin-top:6px;}
-#authUserBadge{font-family:'Courier New',monospace;font-size:13px;font-weight:bold;color:var(--neon);letter-spacing:.5px;display:none;position:fixed;top:10px;left:12px;z-index:100;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:8px;border:1px solid var(--neon);cursor:pointer;}
+#topLeftBar{position:fixed;top:10px;left:12px;z-index:100;display:flex;flex-direction:column;gap:5px;align-items:flex-start;}
+#authUserBadge{font-family:'Courier New',monospace;font-size:13px;font-weight:bold;color:var(--neon);letter-spacing:.5px;display:none;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:8px;border:1px solid var(--neon);cursor:pointer;}
+/* Рейтинг — у неоновому стилі як бейдж профілю «ТАТО» */
+#ratingCornerBtn{display:block;font-family:'Courier New',monospace;font-size:13px;font-weight:bold;color:var(--neon);letter-spacing:.5px;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:8px;border:1px solid var(--neon);cursor:pointer;transition:filter .12s, background .12s;}
+#ratingCornerBtn:hover{background:rgba(0,0,0,.78);filter:brightness(1.12);}
+#menu{position:relative;}
+/* Передісторія — без бордера/фону, правий верхній кут світлої панелі */
+#loreCornerBtn{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--wood2);font:inherit;font-weight:bold;font-size:48px;line-height:1;letter-spacing:.3px;cursor:pointer;opacity:.7;padding:2px 4px;transition:opacity .12s;image-rendering:pixelated;image-rendering:crisp-edges;}
+#loreCornerBtn:hover{opacity:1;text-decoration:underline;}
+#loreCornerBtn{overflow:visible;}
+#loreCornerBtn canvas{display:block;position:relative;z-index:2;filter:brightness(.82) saturate(1.05) drop-shadow(1px 2px 0 rgba(0,0,0,.25));animation:loreFloat 2.6s ease-in-out infinite;}
+#loreCornerBtn::after{content:'';position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);width:30px;height:7px;background:rgba(0,0,0,.42);border-radius:50%;filter:blur(2.5px);z-index:1;pointer-events:none;animation:loreShadow 2.6s ease-in-out infinite;}
+@keyframes loreFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes loreShadow{0%,100%{transform:translateX(-50%) scaleX(1);opacity:.42}50%{transform:translateX(-50%) scaleX(.68);opacity:.24}}
+#loreCornerBtn .lore-tip{position:absolute;top:calc(100% + 8px);right:0;background:#fff7e0;color:var(--ink);border:2px dashed var(--wood);border-radius:10px;padding:5px 10px;font-size:12px;font-weight:bold;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,.35);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .15s,transform .15s;pointer-events:none;z-index:40;}
+#loreCornerBtn:hover .lore-tip{opacity:1;visibility:visible;transform:translateY(0);}
+/* Як грати — компактна дерев'яна кнопка в куті панелі */
+#howToPlayCornerBtn{position:absolute;bottom:12px;right:12px;cursor:pointer;user-select:none;font:inherit;font-weight:bold;font-size:12px;color:#fff;background:linear-gradient(180deg,#9a6a3c,#7c5230);border:none;border-bottom:3px solid #5e3d22;border-radius:10px;padding:5px 11px;box-shadow:0 3px 8px rgba(0,0,0,.25);text-shadow:0 1px 1px rgba(0,0,0,.35);transition:transform .08s, filter .12s;}
+#howToPlayCornerBtn:hover{filter:brightness(1.08);transform:translateY(-1px);}
+#howToPlayCornerBtn:active{transform:translateY(2px);border-bottom-width:1px;}
+#loreOverlay{position:fixed;inset:0;z-index:180;background:rgba(10,15,18,.88);display:none;align-items:center;justify-content:center;padding:14px;}
+#loreOverlay.show{display:flex;}
 #statsOverlay{position:fixed;inset:0;z-index:150;background:rgba(10,15,18,.92);display:none;align-items:center;justify-content:center;padding:14px;overflow-y:auto;}
 #statsOverlay.show{display:flex;}
 #statsOverlay .panel{width:100%;max-width:560px;max-height:90vh;overflow-y:auto;}
@@ -415,6 +439,19 @@
 .hist-badge{font-size:11px;font-weight:bold;padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
 .hist-badge.win{background:#4f9c3c;color:#fff;}
 .hist-badge.loss{background:#bd3d31;color:#fff;}
+#ratingOverlay{position:fixed;inset:0;z-index:150;background:rgba(10,15,18,.92);display:none;align-items:center;justify-content:center;padding:14px;overflow-y:auto;}
+#ratingOverlay.show{display:flex;}
+#ratingOverlay .panel{width:100%;max-width:600px;max-height:90vh;overflow-y:auto;}
+.rating-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--wood);font-size:14px;}
+.rating-row:last-child{border-bottom:none;}
+.rating-rank{font-family:'Courier New',monospace;font-weight:bold;min-width:28px;text-align:center;font-size:16px;}
+.rating-rank.gold{color:var(--gold);}
+.rating-rank.silver{color:#b0b8c4;}
+.rating-rank.bronze{color:#cd7f32;}
+.rating-nick{flex:1;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rating-nick.me{color:var(--neon);}
+.rating-score{font-family:'Courier New',monospace;font-weight:bold;color:var(--neon);min-width:54px;text-align:right;}
+.rating-wr{font-size:12px;opacity:.7;min-width:38px;text-align:right;}
 </style></head>
 <body>
 <script>document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});var _lt=0;document.addEventListener('touchend',function(e){var t=Date.now();if(t-_lt<300)e.preventDefault();_lt=t;},{passive:false});</script>
@@ -477,35 +514,53 @@
   </div>
 </div>
 
-<div id="authUserBadge" onclick="openStats()"></div>
+<div id="ratingOverlay">
+  <div class="panel">
+    <div class="center"><h2>🏆 Рейтинг гравців</h2></div>
+    <div id="ratingContent" style="margin:10px 0"></div>
+    <div class="center" style="margin-top:12px">
+      <button class="btn" onclick="document.getElementById('ratingOverlay').classList.remove('show')">✖ Закрити</button>
+    </div>
+  </div>
+</div>
+
+<div id="loreOverlay">
+  <div class="panel modal" style="text-align:left;max-width:540px">
+    <h2>📜 Передісторія</h2>
+    <p>7 років тому корпорація <b>«Гніздишко»</b> під виглядом притулку ставила досліди над тваринами.
+    Тварини еволюціонували — виросли руки й ноги, вони порозумнішали і втекли. Тепер вони прийшли по помсту.</p>
+    <p>Ти — <b>Іван Готівка</b> 🐱. Твій бос — <b>Чайка</b> 🦆, що вижила після безлічі експериментів.
+    У тебе є ніж і кристал телепорту. Місія 1: пробитися крізь <b>Кролика</b>, <b>Сову</b> і боса — <b>Гігантську Крису</b>.</p>
+    <div class="center" style="margin-top:12px">
+      <button class="btn gold" onclick="closeLore()">Зрозуміло</button>
+    </div>
+  </div>
+</div>
+
+<div id="topLeftBar">
+  <div id="authUserBadge" onclick="openStats()"></div>
+  <button id="ratingCornerBtn" onclick="openRating()">🏆 Рейтинг</button>
+</div>
 <!-- ===================== MENU ===================== -->
 <div id="menu" class="panel">
+  <button id="loreCornerBtn" onclick="openLore()">📜</button>
   <div class="center">
     <h1>IVAN'S REVENGE</h1>
     <div class="hero-img"><span class="char-cat">🐱</span><span class="char-owl">🦉</span><span class="char-rabbit flame-rabbit">🐇</span></div>
   </div>
-  <div class="center" style="margin-top:6px">
-    <span class="loretip" tabindex="0">📜 Передісторія (наведи)
-      <span class="tip">
-        <p style="margin:0 0 .6em">7 років тому корпорація <b>«Гніздишко»</b> під виглядом притулку ставила досліди над тваринами.
-        Тварини еволюціонували — виросли руки й ноги, вони порозумнішали і втекли. Тепер вони прийшли по помсту.</p>
-        <p style="margin:0">Ти — <b>Іван Готівка</b> 🐱. Твій бос — <b>Чайка</b> 🦆, що вижила після безлічі експериментів.
-        У тебе є ніж і кристал телепорту. Місія 1: пробитися крізь <b>Кролика</b>, <b>Сову</b> і боса — <b>Гігантську Крису</b>.</p>
-      </span>
-    </span>
-  </div>
   <div class="center" style="margin-top:14px">
     <button class="btn gold" onclick="startMission()">▶ Грати (Місія 1)</button>
     <button class="btn green" onclick="openPractice()">🥊 Практика</button>
-    <button class="btn" onclick="toggleHelp(true)">📜 Як грати</button>
-    <button class="btn" id="statsBtn" onclick="openStats()" style="display:none">📊 Мій профіль</button>
   </div>
   <div class="center" style="margin-top:4px">
     <button class="btn green" onclick="openOnline()">🌐 PvP онлайн</button>
   </div>
-  <div id="pwaInstallBar" style="display:none;text-align:center;margin-top:6px">
-    <button class="btn" id="pwaBtn" onclick="pwaTrigger()" style="font-size:13px;opacity:.85">📲 Додати на екран</button>
-    <div id="pwaIosHint" style="display:none;font-size:11px;color:#7a5020;margin-top:4px;padding:0 8px">Натисни <b>Поділитись</b> → <b>На екран «Домівка»</b></div>
+  <button id="howToPlayCornerBtn" onclick="toggleHelp(true)">Як грати ?</button>
+  <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+    <div id="pwaInstallBar" style="display:none">
+      <button class="btn" id="pwaBtn" onclick="pwaTrigger()" style="font-size:13px;opacity:.8">📲 Додати на екран</button>
+      <div id="pwaIosHint" style="display:none;font-size:11px;color:#7a5020;margin-top:4px;padding:0 8px">Натисни <b>Поділитись</b> → <b>На екран «Домівка»</b></div>
+    </div>
   </div>
   <div class="center" style="margin-top:8px;border-top:1px dashed var(--wood);padding-top:8px" id="authMenuBtns">
     <button class="btn" onclick="openAuth('login')" style="font-size:13px;opacity:.85">🔑 Увійти</button>
@@ -978,6 +1033,7 @@ function fxIcons(u){
   if(u.fx.fear>0) s+='<span title="Переляк">😱</span>';
   if(u.buff && u.buff.mouse>0) s+='<span title="Мишка +30%">🐭'+u.buff.mouse+'</span>';
   if(u.buff && u.buff.might>0) s+='<span title="Смітник +50%">🗑️'+u.buff.might+'</span>';
+  if(u.fx && u.fx.tail>0) s+='<span title="Хвіст: -1 дія">🐈</span>';
   return s;
 }
 function render(){
@@ -1042,6 +1098,7 @@ function renderControls(){
       ' title="'+a.title+'" onclick="chooseAction(\''+a.action+'\')">'+a.label+
       (a.cost>0?'<span class="cost">'+a.cost+'</span>':'')+'</button>';
   }
+  html+=mk('📖 Книга','book', playerTurn && me.fx.dizzy===0, 0);
   html+='<button class="btn red actbtn" '+(playerTurn?'':'disabled')+' onclick="pvpEndTurnBtn()">⏭️ Кінець ходу</button>';
   box.innerHTML=html;
   function b(label,action,on,cost,title){return {label,action,on,cost,title};}
@@ -1152,7 +1209,7 @@ function spend(n){
   // не плануємо кінець ходу під час асинхронної дії (напр. тапи) — це зробить afterAction
   if(G.actions<=0 && !G.busy){ setTimeout(endTurn,420); }
 }
-function dmgMult(u){ if(u.who==='cat') return u.buff.mouse>0?1.3:1; return u.buff.might>0?1.5:1; }
+function dmgMult(u){ if(u.who==='cat') return u.buff.mouse>0?1.3:1; if(u.buff&&u.buff.mouse>0) return 1.3; return u.buff&&u.buff.might>0?1.5:1; }
 /* вилка урону: повертає випадкове число біля base (±~15%, мінімум ±1). Напр. 15 → 13..17 */
 function rollDmg(base){
   if(base<=0) return 0;
@@ -1585,9 +1642,11 @@ function tapChallenge({title,duration,goal,sub}){
     $('tapMeter').style.width='0%';
     $('tapTime').style.width='100%';
     $('ovTap').classList.add('show');
-    const onTap=()=>{ if(done)return; taps++; $('tapMeter').style.width=Math.min(100,100*taps/goal)+'%';
+    let _tapT=-99;
+    const onTap=()=>{ if(done)return; const _t=performance.now(); if(_t-_tapT<30)return; _tapT=_t; taps++; $('tapMeter').style.width=Math.min(100,100*taps/goal)+'%';
       if(taps>=goal) finish(); };
     $('ovTap').addEventListener('pointerdown',onTap);
+    $('ovTap').addEventListener('touchstart',onTap,{passive:true});
     const onKey=()=>{ if(!done) onTap(); };
     document.addEventListener('keydown',onKey);
     const start=performance.now();
@@ -1598,7 +1657,7 @@ function tapChallenge({title,duration,goal,sub}){
     },50);
     function finish(){
       if(done)return; done=true; clearInterval(tick);
-      $('ovTap').removeEventListener('pointerdown',onTap); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
+      $('ovTap').removeEventListener('pointerdown',onTap); $('ovTap').removeEventListener('touchstart',onTap); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
       resolve({taps,success:taps>=goal});
     }
   });
@@ -1882,6 +1941,8 @@ function showMsg(icon,title,body,btn,cb,btn2,cb2){
 function hideMsg(){ $('ovMsg').classList.remove('show'); }
 function showEndBanner(text,rem){ $('endBannerText').innerHTML=text; const rb=$('endRematchBtn'); if(rb)rb.style.display=rem?'':'none'; $('endBanner').classList.add('show'); const lg=$('log'); if(lg)setTimeout(()=>{lg.scrollTop=lg.scrollHeight;},120); }
 function toggleHelp(v){ $('ovHelp').classList.toggle('show',v); }
+window.openLore=function(){ document.getElementById('loreOverlay').classList.add('show'); };
+window.closeLore=function(){ document.getElementById('loreOverlay').classList.remove('show'); };
 
 /* ---------- logging ---------- */
 function log(msg){
@@ -1912,6 +1973,7 @@ function tutorial(){
 let abort=false;
 let pvpPick=[null,null];
 let pvpPractice=false;
+let tapSession=null;
 let _pickTimer=null;
 function startPickTimer(){
   stopPickTimer();
@@ -2019,7 +2081,10 @@ function pvpStartBtnClick(){
   if(!(pvpPick[0]&&pvpPick[1])) return;
   if(NET.online){
     if(NET.myIdx!==0) return;
-    netSend({t:'start',picks:pvpPick});
+    const first=Math.random()<0.5?0:1;   // хост кидає монету, шле результат обом
+    netSend({t:'start',picks:pvpPick,first});
+    startPvp(first);
+    return;
   }
   startPvp();
 }
@@ -2028,10 +2093,13 @@ function makePvpUnit(key,side){
   const c=CHARACTERS.find(k=>k.key===key);
   return { who: side===0?'p0':'p1', side, name:c.name, emoji:c.emoji,
     x: side===0?0:9, y:2, hp:c.hp, maxHp:c.hp, move:c.move, char:c,
-    fx:{bleed:false,fear:0,dizzy:0}, buff:{might:0}, el:null };
+    fx:{bleed:false,fear:0,dizzy:0,tail:0}, buff:{might:0,mouse:0},
+    spells:{fish:false,mouse:false,sausage:false,tail:false,meow:false}, el:null };
 }
-function startPvp(){
+function startPvp(first){
   if(!(pvpPick[0]&&pvpPick[1])) return;
+  // хто ходить першим: онлайн — синхронно від хоста; локально — рандом
+  const starter = (first==null) ? (NET.online ? 0 : (Math.random()<0.5?0:1)) : (first|0);
   abort=false;
   $('menu').style.display='none';
   $('pvpSelect').style.display='none';
@@ -2049,12 +2117,13 @@ function startPvp(){
   $('log').innerHTML='';
   placeUnits();
   log(pvpPractice?('<b>Практика!</b> Ти ('+p0.name+') проти ШІ ('+p1.name+')'):'<b>1х1!</b> Гравець 1 ('+p0.name+') проти Гравця 2 ('+p1.name+')');
-  if(NET.online){ showCoinFlip(p0,p1,()=>startPvpTurn(0)); } else { startPvpTurn(0); }
+  if(NET.online){ showCoinFlip(p0,p1,starter,()=>startPvpTurn(starter)); } else { startPvpTurn(starter); }
 }
 function startPvpTurn(idx){
   if(!G||abort) return;
   G.active=idx; G.actions=3; G.maxActions=3; G.selected=null; G.busy=false;
   const me=G.players[idx];
+  if(me.fx.tail>0){ G.actions--; me.fx.tail=0; log(me.name+': 🐈 Хвіст — −1 дія цього ходу.'); }
   if(me.fx.bleed){ me.hp-=4; pop(me,'-4','#ff5a4a'); log(me.name+' стікає кров\'ю: −4 HP.');
     if(me.hp<=0){ me.hp=0; render(); return endBattlePvp(1-idx); } }
   if(G.mode==='practice' && idx===1){
@@ -2078,6 +2147,7 @@ function endTurnPvp(){
   if(me.fx.fear>0) me.fx.fear--;
   if(me.fx.dizzy>0) me.fx.dizzy--;
   if(me.buff.might>0) me.buff.might--;
+  if(me.buff.mouse>0) me.buff.mouse--;
   const next=1-G.active;
   if(next===0) G.round++;
   render();
@@ -2095,6 +2165,7 @@ function renderPvpControls(){
   html+=mk('🏃 Рух','move',can(1)&&me.fx.fear===0,1);
   for(const a of me.char.abilities){ html+=mk(a.name,'ab:'+a.id,can(a.cost),a.cost); }
   if(me.fx.bleed) html+=mk('🩹 Перев\'язка','bandage',can(2),2);
+  html+=mk('📖 Книга','book', playerTurn && me.fx.dizzy===0, 0);
   html+='<button class="btn red actbtn" '+(playerTurn?'':'disabled')+' onclick="pvpEndTurnBtn()">⏭️ Кінець ходу</button>';
   box.innerHTML=html;
 }
@@ -2135,6 +2206,7 @@ function pvpChoose(a){
   if(G.busy||G.phase==='ended') return;
   if(NET.online && G.active!==NET.myIdx) return;
   if(a==='bandage'){ pvpBandage(); return; }
+  if(a==='book'){ pvpOpenSpells(); return; }
   if(a==='move'){ G.selected=(G.selected==='move')?null:'move';
     setHint(G.selected?'Клікни клітину, щоб перейти.':'Обери дію.'); render(); return; }
   const me=G.players[G.active];
@@ -2144,6 +2216,63 @@ function pvpChoose(a){
   G.selected=(G.selected===a)?null:a;
   setHint(G.selected?('Клікни суперника (радіус '+(ab.range||1)+').'):'Обери дію.');
   render();
+}
+function pvpOpenSpells(){
+  const me=G.players[G.active], sp=me.spells, g=$('spellGrid');
+  const list=[
+    ['fish','🐟 Рибка','+25 HP'],
+    ['mouse','🐭 Мишка','+30% урону на 2 раунди'],
+    ['sausage','🌭 Сосиска','+1 дія цього раунду'],
+    ['tail','🐈 Хвіст','суперник −1 дія'],
+    ['meow','🐱 М\'яв','телепорт суперника + 💫'],
+  ];
+  g.innerHTML=list.map(([k,t,d])=>
+    '<div class="spell'+(sp[k]?' used':'')+'" onclick="'+(sp[k]?'':'pvpCastSpell(\''+k+'\')')+'"><b>'+t+'</b><small>'+d+'</small></div>'
+  ).join('');
+  $('ovSpell').classList.add('show');
+}
+function pvpCastSpell(k){
+  if(!G) return;
+  const me=G.players[G.active], foe=G.players[1-G.active];
+  if(me.spells[k]||me.fx.dizzy>0) return;
+  me.spells[k]=true; closeSpells();
+  if(k==='meow'){
+    let tx,ty,tries=0;
+    do{ tx=Math.floor(Math.random()*COLS); ty=Math.floor(Math.random()*ROWS); tries++; }
+    while(tries<30&&((tx===me.x&&ty===me.y)||(tx===foe.x&&ty===foe.y)));
+    if(netCanSend()) netSend({t:'spell',k,x:tx,y:ty});
+    applyPvpSpell(k,tx,ty);
+  } else {
+    if(netCanSend()) netSend({t:'spell',k});
+    applyPvpSpell(k);
+  }
+}
+function applyPvpSpell(k,tx,ty){
+  if(!G||abort) return;
+  const me=G.players[G.active], foe=G.players[1-G.active];
+  if(k==='fish'){ me.hp=Math.min(me.maxHp,me.hp+25); pop(me,'+25','#76c95b'); log(me.name+': 🐟 Рибка — +25 HP.'); spend(1); }
+  else if(k==='mouse'){ me.buff.mouse=2; pop(me,'🐭','#ffd27a'); log(me.name+': 🐭 Мишка — +30% урону на 2 раунди.'); spend(1); }
+  else if(k==='sausage'){ G.actions++; pop(me,'🌭','#ffd27a'); log(me.name+': 🌭 Сосиска — +1 дія!'); render(); }
+  else if(k==='tail'){ foe.fx.tail=1; pop(foe,'🐈−1','#ff9b2e'); log(me.name+': 🐈 Хвіст — суперник втратить 1 дію.'); spend(1); }
+  else if(k==='meow'){ foe.x=tx; foe.y=ty; foe.fx.dizzy=1; pop(foe,'💫','#c8a6ff'); log(me.name+': 🐱 М\'яв — телепорт + 💫!'); updateUnitPos(); spend(1); }
+}
+async function pvpDefendTap(ab,atkDmg,atkTaps){
+  const defGoal=Math.round(ab.goal*0.7);
+  const who=G.mode==='pvp'?'Гравець '+(2-G.active)+': тапай, щоб зменшити урон!':'Тапай, щоб зменшити урон!';
+  const res=await tapChallenge({title:'🛡️ Захищайся! Тапай!',duration:Math.min(ab.dur,2000),goal:defGoal,sub:who});
+  if(abort||!G) return;
+  const defFrac=clamp(res.taps/defGoal,0,1);
+  const finalDmg=Math.round(atkDmg*(1-defFrac*0.6));
+  applyTapResult(ab,finalDmg,atkTaps);
+}
+function resolveTapOnline(){
+  if(!tapSession||!G||abort) return;
+  const {ab,atkDmg,atkTaps,defTaps}=tapSession;
+  tapSession=null;
+  const defGoal=Math.round(ab.goal*0.7);
+  const defFrac=clamp(defTaps/defGoal,0,1);
+  const finalDmg=Math.round(atkDmg*(1-defFrac*0.6));
+  applyTapResult(ab,finalDmg,atkTaps);
 }
 async function pvpMove(x,y){
   if(netCanSend()) netSend({t:'move',x:x,y:y});
@@ -2180,13 +2309,20 @@ function pvpAbility(ab){
   }
   if(ab.type==='tap'){
     G.busy=true; render();
+    tapSession={id:ab.id,ab:ab,atkDmg:null,atkTaps:null,defTaps:null};
+    if(netCanSend()) netSend({t:'tapStart',id:ab.id});
     tapChallenge({title:ab.name+' — тапай!',duration:ab.dur,goal:ab.goal,sub:'Тап по екрану або клавіша — якнайшвидше!'})
       .then(res=>{
         if(abort||!G) return;
         const frac=clamp(res.taps/ab.goal,0,1);
-        const dmg=Math.round(ab.dmg*frac*dmgMult(me));
-        if(netCanSend()) netSend({t:'tap',id:ab.id,dmg:dmg,taps:res.taps});
-        applyTapResult(ab,dmg,res.taps);
+        const atkDmg=Math.round(ab.dmg*frac*dmgMult(me));
+        if(NET.online){
+          tapSession.atkDmg=atkDmg; tapSession.atkTaps=res.taps;
+          netSend({t:'tapAtk',id:ab.id,dmg:atkDmg,taps:res.taps});
+          if(tapSession&&tapSession.defTaps!==null) resolveTapOnline();
+        } else {
+          pvpDefendTap(ab,atkDmg,res.taps);
+        }
       });
     return;
   }
@@ -2352,7 +2488,7 @@ const LOBBY_CH  = 'mvibes-lobby-v3-g4n';
 const GAME_CH   = c => 'mvibes-game-g4n-' + c;
 const PN_PUB = 'demo', PN_SUB = 'demo';
 
-const NET  = { pn:null, online:false, myIdx:0, code:null, _hb:null, _wd:null };
+const NET  = { pn:null, online:false, myIdx:0, code:null, _hb:null, _wd:null, _grace:null };
 let _lobbyPn = null, _lobbyHb = null;
 const lobbyPeers = new Map(); // code → {name, ts}
 
@@ -2362,13 +2498,28 @@ function netSend(msg){
   NET.pn.publish({ channel:GAME_CH(NET.code), message:{f:NET.myIdx, d:msg} }).catch(()=>{});
 }
 function netClose(){
-  stopPickTimer(); clearInterval(NET._hb); clearTimeout(NET._wd);
+  stopPickTimer(); clearInterval(NET._hb); clearTimeout(NET._wd); _clearGrace();
   if(NET.pn) try{ NET.pn.unsubscribeAll(); }catch(e){}
   NET.pn=null; NET.online=false; NET.code=null;
 }
 function _resetWd(){
-  clearTimeout(NET._wd);
-  NET._wd = setTimeout(()=>{ if(NET.online) onPeerGone(); }, 22000);
+  const _wasGrace=!!NET._grace; clearTimeout(NET._wd); _clearGrace();
+  if(_wasGrace&&NET.online&&G&&G.phase!=='ended'){ log("✅ З'єднання відновлено!"); render(); }
+  NET._wd = setTimeout(()=>{ if(NET.online) _startGrace(); }, 22000);
+}
+function _clearGrace(){ clearTimeout(NET._grace); NET._grace=null; }
+function _startGrace(){
+  if(NET._grace||!NET.online) return;
+  if(G&&G.phase!=='ended') log("⚠️ Лаг — чекаємо на суперника…");
+  let sec=10;
+  const tick=()=>{
+    if(!NET.online){NET._grace=null;return;}
+    if(sec<=0){NET._grace=null; onPeerGone(); return;}
+    if(G&&G.phase!=='ended') setHint("⚠️ Лаг… "+sec+"с до завершення");
+    sec--;
+    NET._grace=setTimeout(tick,1000);
+  };
+  tick();
 }
 function _stopLobby(){
   clearInterval(_lobbyHb);
@@ -2570,7 +2721,7 @@ function netRecv(data){
   if(!data || !data.t) return;
   // ----- lobby -----
   if(data.t==='pick'){ pvpPick[data.idx]=data.key; if($('pvpSelect').style.display!=='none') renderPvpSelect(); return; }
-  if(data.t==='start'){ pvpPick=data.picks; NET.online=true; stopPickTimer(); startPvp(); return; }
+  if(data.t==='start'){ pvpPick=data.picks; NET.online=true; stopPickTimer(); startPvp(data.first|0); return; }
   if(data.t==='leave'){
     NET.online=false; netClose();
     showMsg('🔌','Суперник вийшов','Гравець залишив гру.','🏠 У меню',()=>{
@@ -2587,7 +2738,10 @@ function netRecv(data){
     case 'ab':  { const ab=findActiveAb(data.id); if(ab) pvpAbility(ab); break; }
     case 'buff':{ const ab=findActiveAb(data.id); if(ab) pvpBuff(ab); break; }
     case 'bandage': pvpBandage(); break;
-    case 'tap': { const ab=findActiveAb(data.id); if(ab){ G.busy=true; applyTapResult(ab, data.dmg, data.taps); } break; }
+    case 'tapStart': { const ab=findActiveAb(data.id); if(!ab) break; G.busy=true; render(); tapSession={id:data.id,ab:ab,atkDmg:null,atkTaps:null,defTaps:null}; const defGoal=Math.round(ab.goal*0.7); tapChallenge({title:'🛡️ Захищайся! Тапай!',duration:Math.min(ab.dur,2000),goal:defGoal,sub:'Тапай, щоб зменшити урон!'}).then(res=>{ if(!G||abort) return; if(tapSession) tapSession.defTaps=res.taps; netSend({t:'tapDef',id:data.id,defTaps:res.taps}); if(tapSession&&tapSession.atkDmg!==null) resolveTapOnline(); }); break; }
+    case 'tapAtk': { if(!tapSession){ const ab=findActiveAb(data.id); if(ab) applyTapResult(ab,data.dmg,data.taps); break; } tapSession.atkDmg=data.dmg; tapSession.atkTaps=data.taps; if(tapSession.defTaps!==null) resolveTapOnline(); break; }
+    case 'tapDef': { if(!tapSession) break; tapSession.defTaps=data.defTaps; if(tapSession.atkDmg!==null) resolveTapOnline(); break; }
+    case 'spell': { if(data.k==='meow') applyPvpSpell(data.k,data.x,data.y); else applyPvpSpell(data.k); break; }
     case 'endTurn': endTurnPvp(); break;
     case 'boom': { const ab=findActiveAb(data.id); if(ab) applyBoomerang(ab,data.dmg,data.passiveBonus); break; }
   }
@@ -2674,6 +2828,7 @@ function toggleMusic(){
   const btn=$('musicBtn');
   btn.classList.toggle('loud',loud);
   btn.title = loud?'Музика: гучно':'Музика: тихо';
+  const mb=$('menuMusicBtn'); if(mb) mb.textContent=loud?'🎵 Звук':'🔇 Звук';
 }
 /* автозапуск (тихо) при першій взаємодії — браузери блокують звук без жесту */
 function primeMusic(){
@@ -2691,12 +2846,14 @@ document.querySelectorAll('.hero-img span').forEach((s,i)=>{
   if(i===0) s.appendChild(catCanvas(46,'idle',false));   // Кіт-герой (джинси + AC/DC)
   else if(e) s.appendChild(pixelEmoji(e, 52, 24));
 });
+(function(){var lb=document.getElementById('loreCornerBtn');if(lb&&typeof pixelEmoji==='function'){lb.textContent='';lb.appendChild(pixelEmoji('📜',44,22));var lt=document.createElement('span');lt.className='lore-tip';lt.textContent='Передісторія';lb.appendChild(lt);}})();
 function openVoiceChat(){
   if(!NET.code){ alert('Спочатку почніть онлайн-гру!'); return; }
   window.open('https://meet.jit.si/MVibes-'+NET.code,'_blank','width=420,height=320,toolbar=no,menubar=no');
 }
-function showCoinFlip(p0,p1,cb){
+function showCoinFlip(p0,p1,first,cb){
   const ov=$('coinOverlay'), coin=$('theCoin');
+  const winner = first?p1:p0;
   const mkAv=(unit,fl)=>{
     const w=document.createElement('div'); w.className='coin-avatar';
     if(unit.char&&unit.char.key==='papa') w.appendChild(papaCanvas(76,'idle',fl));
@@ -2709,8 +2866,8 @@ function showCoinFlip(p0,p1,cb){
   $('coinBack').innerHTML='';  $('coinBack').appendChild(mkAv(p1,true));
   $('coinLbl').textContent='🪙 Підкидаємо монету…';
   ov.style.display='flex';
-  coin.classList.remove('spin'); void coin.offsetWidth; coin.classList.add('spin');
-  setTimeout(()=>{ $('coinLbl').innerHTML='<b>Перший хід: '+p0.name+'! ⚔️</b>'; },2000);
+  coin.classList.remove('spin0','spin1'); void coin.offsetWidth; coin.classList.add(first?'spin1':'spin0');
+  setTimeout(()=>{ $('coinLbl').innerHTML='<b>Перший хід: '+winner.name+'! ⚔️</b>'; },2000);
   setTimeout(()=>{ ov.style.display='none'; cb(); },3200);
 }
 /* ===== FIREBASE AUTH ===== */
@@ -2774,13 +2931,15 @@ window.doRegister=async function(){
   }catch(e){err.textContent='Помилка: '+e.message;}
 };
 function loginOk(nick,stats){
-  window._user={nick,wins:stats.wins||0,losses:stats.losses||0};
+  window._user={nick,wins:stats.wins||0,losses:stats.losses||0,
+    botWins:stats.botWins||0,botLosses:stats.botLosses||0,
+    pvpWins:stats.pvpWins||0,pvpLosses:stats.pvpLosses||0};
   localStorage.setItem('mv_user',nick);
   document.getElementById('authOverlay').style.display='none';
   const badge=document.getElementById('authUserBadge');
   badge.textContent='👤 '+nick;
   badge.style.display='block';
-  const sb=document.getElementById('statsBtn');if(sb)sb.style.display='';
+  const rcb=document.getElementById('ratingCornerBtn');if(rcb)rcb.style.display='block';
   const ni=document.getElementById('nameInput');if(ni)ni.value=nick;
   myName=nick;
   const ab=document.getElementById('authMenuBtns');if(ab)ab.style.display='none';
@@ -2811,11 +2970,15 @@ window.doLogout=function(){
 };
 window.saveGameResult=async function(mode,result,opponent,character){
   if(!window._user)return;
-  if(result==='win')window._user.wins++;else window._user.losses++;
+  const u=window._user;
+  const isPvp=(mode==='online'||mode==='pvp');   // онлайн-бій з людиною, інакше — боти
+  if(result==='win'){ u.wins++; if(isPvp)u.pvpWins=(u.pvpWins||0)+1; else u.botWins=(u.botWins||0)+1; }
+  else { u.losses++; if(isPvp)u.pvpLosses=(u.pvpLosses||0)+1; else u.botLosses=(u.botLosses||0)+1; }
   const entry={date:new Date().toISOString().slice(0,10),mode,result,opponent:opponent||'',character:character||''};
   try{
-    await window._db.ref('users/'+window._user.nick+'/stats').set({wins:window._user.wins,losses:window._user.losses});
-    await window._db.ref('users/'+window._user.nick+'/history').push(entry);
+    await window._db.ref('users/'+u.nick+'/stats').set({wins:u.wins,losses:u.losses,
+      botWins:u.botWins||0,botLosses:u.botLosses||0,pvpWins:u.pvpWins||0,pvpLosses:u.pvpLosses||0});
+    await window._db.ref('users/'+u.nick+'/history').push(entry);
   }catch(e){console.warn('saveGameResult',e);}
 };
 window.openStats=async function(){
@@ -2842,6 +3005,40 @@ window.openStats=async function(){
     el.innerHTML=html;
     window._user.wins=s.wins||0;window._user.losses=s.losses||0;
   }catch(e){el.innerHTML='<p class="center">Помилка</p>';}
+};
+window.openRating=async function(){
+  const el=document.getElementById('ratingContent');
+  el.innerHTML='<p class="center muted">Завантаження…</p>';
+  document.getElementById('ratingOverlay').classList.add('show');
+  try{
+    const snap=await window._db.ref('users').once('value');
+    const all=snap.val()||{};
+    const rows=Object.entries(all).map(function([nick,u]){
+      const s=(u&&u.stats)||{};
+      const w=s.wins||0; const l=s.losses||0; const t=w+l;
+      const bw=s.botWins||0, bl=s.botLosses||0, bt=bw+bl;       // боти (кампанія)
+      const pw=s.pvpWins||0, pl=s.pvpLosses||0, pt=pw+pl;       // онлайн з людьми
+      const score=t===0?0:Math.round((w/t)*Math.log2(w+1)*100);
+      const botWR=bt?Math.round(bw/bt*100):0;
+      const pvpWR=pt?Math.round(pw/pt*100):0;
+      return{nick,w,l,t,score,bw,bl,bt,botWR,pw,pl,pt,pvpWR};
+    });
+    rows.sort(function(a,b){return b.score-a.score;});
+    const me=window._user?window._user.nick:null;
+    if(!rows.length){el.innerHTML='<p class="center muted">Ще немає гравців</p>';return;}
+    let html='<div style="font-size:11px;opacity:.6;text-align:right;margin-bottom:4px">Рейтинг = WR × log₂(перемоги+1) × 100</div>';
+    html+='<div class="rating-row" style="font-size:11px;opacity:.7;font-weight:bold;border-bottom:2px solid var(--wood)"><span class="rating-rank">#</span><span class="rating-nick">Гравець</span><span class="rating-wr" title="Вінрейт проти ботів">🤖 Боти</span><span class="rating-wr" title="Вінрейт онлайн з людьми">🌐 Онлайн</span><span class="rating-score">Очки</span></div>';
+    rows.forEach(function(r,i){
+      const rank=i+1;
+      const rankCls=rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
+      const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
+      const nickCls=r.nick===me?' me':'';
+      const botCell=r.bt?(r.botWR+'%'):'—';
+      const pvpCell=r.pt?(r.pvpWR+'%'):'—';
+      html+='<div class="rating-row"><span class="rating-rank '+rankCls+'">'+medal+'</span><span class="rating-nick'+nickCls+'">'+(r.nick===me?'⚡ ':'')+r.nick+'</span><span class="rating-wr" title="'+r.bw+'W / '+r.bl+'L проти ботів">'+botCell+'</span><span class="rating-wr" title="'+r.pw+'W / '+r.pl+'L онлайн">'+pvpCell+'</span><span class="rating-score">'+r.score+'</span></div>';
+    });
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<p class="center">Помилка завантаження</p>';}
 };
 setupPin('loginPin');setupPin('regPin');
 (async function(){
