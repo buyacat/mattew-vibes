@@ -82,6 +82,13 @@
   .hero-img span{filter:drop-shadow(2px 2px 0 rgba(0,0,0,.45)) drop-shadow(0 0 11px rgba(57,230,255,.45)) contrast(1.1) saturate(1.2);animation:bob 2.4s ease-in-out infinite;}
   .hero-img span:nth-child(3){filter:drop-shadow(2px 2px 0 rgba(0,0,0,.45)) drop-shadow(0 0 11px rgba(255,79,163,.45)) contrast(1.1) saturate(1.2);}
 
+  /* flame rabbit */
+  .flame-rabbit{animation:bob 2.4s ease-in-out infinite, flamePulse 0.6s ease-in-out infinite alternate !important;
+    filter:drop-shadow(2px 2px 0 rgba(0,0,0,.45)) drop-shadow(0 0 14px #ff6a00) drop-shadow(0 0 6px #ff0000) contrast(1.1) saturate(1.3) !important;}
+  @keyframes flamePulse{
+    0%{filter:drop-shadow(2px 2px 0 rgba(0,0,0,.45)) drop-shadow(0 0 10px #ff6a00) drop-shadow(0 0 4px #ff0000) contrast(1.1) saturate(1.2);}
+    100%{filter:drop-shadow(2px 2px 0 rgba(0,0,0,.45)) drop-shadow(0 0 22px #ffb300) drop-shadow(0 0 12px #ff4500) drop-shadow(0 0 6px #ff0000) contrast(1.2) saturate(1.5) brightness(1.1);}}
+
   /* ---------- Battle layout ---------- */
   #battle{display:none;}
   #pvpSelect{display:none;}   /* екран вибору PvP схований, поки не натиснуть «PvP» у меню */
@@ -381,12 +388,87 @@
     #musicBtn{width:40px;height:40px;font-size:18px;top:6px;right:6px;}
   }
 </style>
-</head>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+#authOverlay{position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#17242b,#10171c 60%,#0a0f12);display:flex;align-items:center;justify-content:center;padding:14px;}
+#authOverlay .panel{width:100%;max-width:380px;}
+.pin-input{display:flex;gap:8px;justify-content:center;margin:10px 0;}
+.pin-input input{width:52px;height:62px;text-align:center;font-size:28px;font-weight:bold;font-family:'Courier New',monospace;background:#fff7e0;border:3px solid var(--wood);border-radius:10px;color:var(--ink);caret-color:transparent;outline:none;}
+.pin-input input:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(57,230,255,.25);}
+.auth-err{color:#e0473a;font-size:13px;min-height:18px;text-align:center;margin-top:6px;}
+#authUserBadge{font-family:'Courier New',monospace;font-size:13px;font-weight:bold;color:var(--neon);letter-spacing:.5px;display:none;position:fixed;top:10px;left:12px;z-index:100;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:8px;border:1px solid var(--neon);cursor:pointer;}
+#statsOverlay{position:fixed;inset:0;z-index:150;background:rgba(10,15,18,.92);display:none;align-items:center;justify-content:center;padding:14px;overflow-y:auto;}
+#statsOverlay.show{display:flex;}
+#statsOverlay .panel{width:100%;max-width:560px;max-height:90vh;overflow-y:auto;}
+.hist-row{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--wood);font-size:14px;flex-wrap:wrap;}
+.hist-row:last-child{border-bottom:none;}
+.hist-badge{font-size:11px;font-weight:bold;padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.hist-badge.win{background:#4f9c3c;color:#fff;}
+.hist-badge.loss{background:#bd3d31;color:#fff;}
+</style></head>
 <body>
 <script>document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});var _lt=0;document.addEventListener('touchend',function(e){var t=Date.now();if(t-_lt<300)e.preventDefault();_lt=t;},{passive:false});</script>
 <button id="musicBtn" title="Музика" onclick="toggleMusic()"><span class="eq"><i></i><i></i><i></i><i></i></span></button>
 <div class="wrap">
 
+<!-- ===================== AUTH ===================== -->
+<div id="authOverlay">
+  <div class="panel">
+    <div class="center"><h1>IVAN'S REVENGE</h1></div>
+    <div class="center" style="margin:10px 0">
+      <button class="btn gold" id="tabLogin" onclick="switchAuthTab('login')">Увійти</button>
+      <button class="btn" id="tabReg" onclick="switchAuthTab('reg')">Реєстрація</button>
+    </div>
+    <div id="authLogin">
+      <p class="center muted" style="margin:6px 0">Нікнейм</p>
+      <div class="center"><input id="loginName" class="codeinput" style="font-size:18px;letter-spacing:2px;width:240px;max-width:90%" maxlength="12" placeholder="Нікнейм"></div>
+      <p class="center muted" style="margin:8px 0 4px">PIN-код (4 цифри)</p>
+      <div class="pin-input" id="loginPin">
+        <input type="tel" maxlength="1" inputmode="numeric">
+        <input type="tel" maxlength="1" inputmode="numeric">
+        <input type="tel" maxlength="1" inputmode="numeric">
+        <input type="tel" maxlength="1" inputmode="numeric">
+      </div>
+      <div class="auth-err" id="authErr1"></div>
+      <div class="center" style="margin-top:12px">
+        <button class="btn gold" onclick="doLogin()">▶ Увійти</button>
+      </div>
+    </div>
+    <div id="authReg" style="display:none">
+      <p class="center muted" style="margin:6px 0">Нікнейм (до 12 символів)</p>
+      <div class="center"><input id="regName" class="codeinput" style="font-size:18px;letter-spacing:2px;width:240px;max-width:90%" maxlength="12" placeholder="Нікнейм"></div>
+      <p class="center muted" style="margin:8px 0 4px">PIN-код (4 цифри)</p>
+      <div class="pin-input" id="regPin">
+        <input type="tel" maxlength="1" inputmode="numeric">
+        <input type="tel" maxlength="1" inputmode="numeric">
+        <input type="tel" maxlength="1" inputmode="numeric">
+        <input type="tel" maxlength="1" inputmode="numeric">
+      </div>
+      <div class="auth-err" id="authErr2"></div>
+      <div class="center" style="margin-top:12px">
+        <button class="btn green" onclick="doRegister()">✅ Зареєструватись</button>
+      </div>
+    </div>
+    <div class="center" style="margin-top:14px;border-top:1px dashed var(--wood);padding-top:10px">
+      <button class="btn" style="opacity:.7;font-size:13px" onclick="continueAsGuest()">👻 Грати без акаунту</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== STATS ===================== -->
+<div id="statsOverlay">
+  <div class="panel">
+    <div class="center"><h2>📊 Мій профіль</h2></div>
+    <div id="statsContent" style="margin:10px 0"></div>
+    <div class="center" style="margin-top:12px">
+      <button class="btn" onclick="document.getElementById('statsOverlay').classList.remove('show')">✖ Закрити</button>
+      <button class="btn red" onclick="doLogout()">🚪 Вийти з акаунту</button>
+    </div>
+  </div>
+</div>
+
+<div id="authUserBadge" onclick="openStats()"></div>
 <!-- ===================== MENU ===================== -->
 <div id="menu" class="panel">
   <div class="center">
@@ -406,8 +488,11 @@
   <div class="center" style="margin-top:14px">
     <button class="btn gold" onclick="startMission()">▶ Грати (Місія 1)</button>
     <button class="btn green" onclick="openPvp()">⚔️ PvP (1 пристрій)</button>
-    <button class="btn green" onclick="openOnline()">🌐 PvP онлайн</button>
     <button class="btn" onclick="toggleHelp(true)">📜 Як грати</button>
+    <button class="btn" id="statsBtn" onclick="openStats()" style="display:none">📊 Мій профіль</button>
+  </div>
+  <div class="center" style="margin-top:4px">
+    <button class="btn green" onclick="openOnline()">🌐 PvP онлайн</button>
   </div>
 </div>
 
@@ -779,6 +864,44 @@ function papaCanvas(displayW, frame, faceLeft){
   cv.className='px'; cv.style.width=displayW+'px'; cv.style.height=Math.round(displayW*RN/COLS)+'px';
   return cv;
 }
+const OWL_PAL={
+  'B':'#2d1800','b':'#7a4510',
+  'T':'#c49830','W':'#f0e8c8',
+  'O':'#e89000','K':'#111111',
+  'y':'#f0c000','Y':'#c89000',
+};
+const OWL_SPR=[
+  "Bb            bB",
+  "BBb          bBB",
+  "bBBb        bBBb",
+  "bBBBb      bBBBb",
+  "bBBBBbTTTTbBBBBb",
+  "bBBBBTOKKOTBBBBb",
+  "bBBBBTKyyKTBBBBb",
+  "bBBBBWWWWWBBBBBb",
+  " bBBWWWWWWWBBb  ",
+  "  bBWWWbbWWBb   ",
+  "  bBWbbbbbWBb   ",
+  "   bBBbbbBBb    ",
+  "    bBBBBBb     ",
+  "     bBBBb      ",
+  "   yY     Yy    ",
+  "  yYY     YYy   ",
+  " yYYy     yYYy  ",
+  " y  y     y  y  ",
+  " y         y    ",
+  "                ",
+];
+function owlCanvas(displayW, faceLeft){
+  const COLS=16, RN=20;
+  const cv=document.createElement('canvas'); cv.width=COLS; cv.height=RN;
+  const ctx=cv.getContext('2d');
+  if(faceLeft){ ctx.translate(COLS,0); ctx.scale(-1,1); }
+  for(let y=0;y<OWL_SPR.length;y++){ const r=OWL_SPR[y];
+    for(let x=0;x<r.length;x++){ const cl=OWL_PAL[r[x]]; if(cl){ ctx.fillStyle=cl; ctx.fillRect(x,y,1,1); } } }
+  cv.className='px'; cv.style.width=displayW+'px'; cv.style.height=Math.round(displayW*RN/COLS)+'px';
+  return cv;
+}
 function isHeroCat(u){ return !!u && u.who==='cat'; }
 function buildSprite(u, frame){
   const other = (u===G.cat) ? G.enemy : G.cat;
@@ -786,6 +909,7 @@ function buildSprite(u, frame){
   u._right = right;
   if(isHeroCat(u)) return catCanvas(33, frame||'idle', !right);
   if(u.char && u.char.key==='papa') return papaCanvas(33, frame||'idle', !right);
+  if(u.char && u.char.key==='owl') return owlCanvas(33, !right);
   return pixelEmoji(u.emoji, 38, 20, right);
 }
 function refreshSprite(u, frame){
@@ -1688,18 +1812,21 @@ function endBattle(win){
   if(!G) return;
   G.busy=true; G.phase='ended'; clearHL();
   if(!win){
+    saveGameResult('campaign','loss',G.enemy.name,'Іван Готівка');
     showMsg('💀','Поразка…','Івана Готівку здолали. Спробуй ще раз — тактика вирішує все.','🔄 Спробувати знову',()=>{ hideMsg(); loadBattle(); });
     return;
   }
   const wasBoss = G.enemy.boss;
   const last = G.battleIndex>=ENEMIES.length-1;
   if(last && wasBoss){
+    saveGameResult('campaign','win','Гігантська Криса','Іван Готівка');
     showMsg('🏆','МІСІЮ 1 ЗАВЕРШЕНО!',
       'Гігантська Криса повалена! З тіні виходить пес <b>Барсік</b> 🐕 — союзник із новими вміннями (Димова завіса, Шарик, «Пук»). Помста лише починається…',
       '🎉 У меню',()=>{ hideMsg(); $('battle').style.display='none'; $('menu').style.display='block'; });
     return;
   }
   const nextName=ENEMIES[G.battleIndex+1].name;
+  saveGameResult('campaign','win',G.enemy.name,'Іван Готівка');
   showMsg('✅','Перемога!','Ти здолав '+G.enemy.name+'. Далі — <b>'+nextName+'</b>. HP відновлено.',
     '➡️ Далі',()=>{ hideMsg(); G.battleIndex++; loadBattle(); });
 }
@@ -1819,12 +1946,13 @@ function renderPvpSelect(){
       const ab=c.abilities.map(a=>a.name).join(' · ');
       const click = locked ? '' : ' onclick="pickChar('+p+',\''+c.key+'\')"';
       return '<div class="charcard'+(sel?' sel':'')+(locked?' locked':'')+'"'+click+'>'+
-        '<div class="cface'+(c.key==='papa'?' papa-spr':'')+'">'+( c.key==='papa'?'':c.emoji)+'</div>'+
+        '<div class="cface'+(c.key==='papa'?' papa-spr':c.key==='owl'?' owl-spr':'')+'">'+( c.key==='papa'||c.key==='owl'?'':c.emoji)+'</div>'+
         '<div class="cinfo"><b>'+c.name+'</b>'+
         '<small>❤️ '+c.hp+' · 🏃 рух '+c.move+'</small>'+
         '<small>'+ab+'</small>'+(c.passive?'<small class="ps-hint">🛡 '+c.passive.name+'</small>':'')+'</div></div>';
     }).join('');
     box.querySelectorAll('.papa-spr').forEach(el=>el.appendChild(papaCanvas(40,'idle',false)));
+    box.querySelectorAll('.owl-spr').forEach(el=>el.appendChild(owlCanvas(40,false)));
   }
   if($('pvpP0title')) $('pvpP0title').textContent = '🔵 Гравець 1'+(NET.online&&NET.myIdx===0?' (ти)':'');
   if($('pvpP1title')) $('pvpP1title').textContent = '🔴 Гравець 2'+(NET.online&&NET.myIdx===1?' (ти)':'');
@@ -1873,7 +2001,7 @@ function startPvp(){
   $('voiceBtn').style.display=NET.online?'':'none';
   $('catName').textContent=p0.name;
   $('enName').textContent=p1.name;
-  (function(){ const sf=(el,u,fl)=>{ el.textContent=''; if(u.char&&u.char.key==='papa') el.appendChild(papaCanvas(36,'idle',fl)); else if(typeof setPixel==='function') setPixel(el,u.emoji,40,22); else el.textContent=u.emoji; }; sf($('catFace'),p0,false); sf($('enFace'),p1,true); })();
+  (function(){ const sf=(el,u,fl)=>{ el.textContent=''; if(u.char&&u.char.key==='papa') el.appendChild(papaCanvas(36,'idle',fl)); else if(u.char&&u.char.key==='owl') el.appendChild(owlCanvas(36,fl)); else if(typeof setPixel==='function') setPixel(el,u.emoji,40,22); else el.textContent=u.emoji; }; sf($('catFace'),p0,false); sf($('enFace'),p1,true); })();
   $('log').innerHTML='';
   placeUnits();
   log('<b>1х1!</b> Гравець 1 ('+p0.name+') проти Гравця 2 ('+p1.name+')');
@@ -2084,6 +2212,7 @@ function endBattlePvp(winnerIdx){
   const who = NET.online ? (winnerIdx===NET.myIdx?'Ти переміг! 🎉':'Суперник переміг.') : ('Гравець '+(winnerIdx+1)+' переміг!');
   const body = '<b>'+who+'</b><br>('+w.name+' '+w.emoji+')';
   if(NET.online){
+    saveGameResult('online',winnerIdx===NET.myIdx?'win':'loss',G.players[1-NET.myIdx].name,(G.players[NET.myIdx].char||{}).name||'');
     showMsg('🏆','Кінець бою',body,'🏠 У меню',()=>{ hideMsg(); returnToMenu(true); });
   } else {
     showMsg('🏆','Перемога!',body,
@@ -2463,6 +2592,7 @@ function showCoinFlip(p0,p1,cb){
   const mkAv=(unit,fl)=>{
     const w=document.createElement('div'); w.className='coin-avatar';
     if(unit.char&&unit.char.key==='papa') w.appendChild(papaCanvas(76,'idle',fl));
+    else if(unit.char&&unit.char.key==='owl') w.appendChild(owlCanvas(76,fl));
     else if(typeof setPixel==='function'){ const s=document.createElement('span'); setPixel(s,unit.emoji,68,38); w.appendChild(s); }
     else { w.style.fontSize='48px'; w.textContent=unit.emoji; }
     return w;
@@ -2475,6 +2605,137 @@ function showCoinFlip(p0,p1,cb){
   setTimeout(()=>{ $('coinLbl').innerHTML='<b>Перший хід: '+p0.name+'! ⚔️</b>'; },2000);
   setTimeout(()=>{ ov.style.display='none'; cb(); },3200);
 }
+/* ===== FIREBASE AUTH ===== */
+(function(){
+const _cfg={apiKey:"AIzaSyA2BP9gt9elJEZyhvGBPXWG2kHVxxw34dY",authDomain:"ivan-s-revenge.firebaseapp.com",databaseURL:"https://ivan-s-revenge-default-rtdb.firebaseio.com",projectId:"ivan-s-revenge",storageBucket:"ivan-s-revenge.firebasestorage.app",messagingSenderId:"1015562961199",appId:"1:1015562961199:web:874769cbf10baaec9421da"};
+firebase.initializeApp(_cfg);
+window._db=firebase.database();
+window._user=null;
+
+async function hashPin(pin){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('mv7:'+pin));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function pinVal(id){return[...document.querySelectorAll('#'+id+' input')].map(i=>i.value).join('');}
+function setupPin(id){
+  const ins=[...document.querySelectorAll('#'+id+' input')];
+  ins.forEach((inp,i)=>{
+    inp.addEventListener('input',()=>{inp.value=inp.value.replace(/\D/g,'').slice(-1);if(inp.value&&i<ins.length-1)ins[i+1].focus();});
+    inp.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!inp.value&&i>0)ins[i-1].focus();});
+  });
+}
+window.switchAuthTab=function(tab){
+  const login=tab==='login';
+  document.getElementById('authLogin').style.display=login?'':'none';
+  document.getElementById('authReg').style.display=login?'none':'';
+  document.getElementById('tabLogin').classList.toggle('gold',login);
+  document.getElementById('tabReg').classList.toggle('gold',!login);
+  document.getElementById('authErr1').textContent='';
+  document.getElementById('authErr2').textContent='';
+};
+window.doLogin=async function(){
+  const nick=(document.getElementById('loginName').value||'').trim();
+  const pin=pinVal('loginPin');
+  const err=document.getElementById('authErr1');
+  if(!nick){err.textContent='Введи нікнейм';return;}
+  if(pin.length!==4){err.textContent='Введи 4-значний PIN';return;}
+  err.textContent='⏳…';
+  try{
+    const snap=await window._db.ref('users/'+nick).once('value');
+    if(!snap.exists()){err.textContent='Нікнейм не знайдено';return;}
+    const h=await hashPin(pin);
+    if(snap.val().pin!==h){err.textContent='Невірний PIN';return;}
+    loginOk(nick,snap.val().stats||{});
+  }catch(e){err.textContent='Помилка: '+e.message;}
+};
+window.doRegister=async function(){
+  const nick=(document.getElementById('regName').value||'').trim();
+  const pin=pinVal('regPin');
+  const err=document.getElementById('authErr2');
+  if(!nick){err.textContent='Введи нікнейм';return;}
+  if(!/^[\wЀ-ӿ]{1,12}$/i.test(nick)){err.textContent='Лише букви, цифри та _';return;}
+  if(pin.length!==4){err.textContent='Введи 4-значний PIN';return;}
+  err.textContent='⏳…';
+  try{
+    const snap=await window._db.ref('users/'+nick).once('value');
+    if(snap.exists()){err.textContent='Нікнейм вже зайнятий';return;}
+    const h=await hashPin(pin);
+    await window._db.ref('users/'+nick).set({pin:h,stats:{wins:0,losses:0}});
+    loginOk(nick,{wins:0,losses:0});
+  }catch(e){err.textContent='Помилка: '+e.message;}
+};
+function loginOk(nick,stats){
+  window._user={nick,wins:stats.wins||0,losses:stats.losses||0};
+  localStorage.setItem('mv_user',nick);
+  document.getElementById('authOverlay').style.display='none';
+  const badge=document.getElementById('authUserBadge');
+  badge.textContent='👤 '+nick;
+  badge.style.display='block';
+  const sb=document.getElementById('statsBtn');if(sb)sb.style.display='';
+  const ni=document.getElementById('nameInput');if(ni)ni.value=nick;
+}
+window.continueAsGuest=function(){
+  window._user=null;localStorage.removeItem('mv_user');
+  document.getElementById('authOverlay').style.display='none';
+  document.getElementById('authUserBadge').style.display='none';
+  const sb=document.getElementById('statsBtn');if(sb)sb.style.display='none';
+};
+window.doLogout=function(){
+  window._user=null;localStorage.removeItem('mv_user');
+  document.getElementById('statsOverlay').classList.remove('show');
+  document.getElementById('authOverlay').style.display='flex';
+  document.getElementById('authUserBadge').style.display='none';
+  const sb=document.getElementById('statsBtn');if(sb)sb.style.display='none';
+  document.querySelectorAll('#loginPin input,#regPin input').forEach(i=>i.value='');
+  document.getElementById('loginName').value='';
+  document.getElementById('regName').value='';
+  document.getElementById('authErr1').textContent='';
+  document.getElementById('authErr2').textContent='';
+};
+window.saveGameResult=async function(mode,result,opponent,character){
+  if(!window._user)return;
+  if(result==='win')window._user.wins++;else window._user.losses++;
+  const entry={date:new Date().toISOString().slice(0,10),mode,result,opponent:opponent||'',character:character||''};
+  try{
+    await window._db.ref('users/'+window._user.nick+'/stats').set({wins:window._user.wins,losses:window._user.losses});
+    await window._db.ref('users/'+window._user.nick+'/history').push(entry);
+  }catch(e){console.warn('saveGameResult',e);}
+};
+window.openStats=async function(){
+  const el=document.getElementById('statsContent');
+  el.innerHTML='<p class="center muted">Завантаження…</p>';
+  document.getElementById('statsOverlay').classList.add('show');
+  if(!window._user){el.innerHTML='<p class="center muted">Ти не в акаунті</p>';return;}
+  try{
+    const snap=await window._db.ref('users/'+window._user.nick).once('value');
+    const d=snap.val()||{};
+    const s=d.stats||{wins:0,losses:0};
+    const hist=d.history?Object.values(d.history).reverse().slice(0,20):[];
+    const total=(s.wins||0)+(s.losses||0);
+    const wr=total?Math.round(s.wins/total*100):0;
+    let html='<div class="center" style="margin-bottom:14px"><b style="font-size:18px">👤 '+window._user.nick+'</b><br><span style="font-size:14px;opacity:.8">Перемоги: <b>'+(s.wins||0)+'</b> &nbsp;|&nbsp; Поразки: <b>'+(s.losses||0)+'</b> &nbsp;|&nbsp; WR: <b>'+wr+'%</b></span></div>';
+    if(hist.length){
+      html+='Останні ігри:';
+      hist.forEach(function(h){
+        const ml=h.mode==='campaign'?'Місія':h.mode==='online'?'Онлайн':'PvP';
+        const res=h.result==='win'?'Перемога':'Поразка';
+        html+='<div class="hist-row"><span class="hist-badge '+h.result+'">'+res+'</span><span style="opacity:.6;min-width:80px">'+h.date+'</span><span>'+ml+(h.opponent?' vs '+h.opponent:'')+(h.character?' ('+h.character+')':'')+'</span></div>';
+      });
+    } else { html+='<p class="center muted">Ще жодної гри</p>'; }
+    el.innerHTML=html;
+    window._user.wins=s.wins||0;window._user.losses=s.losses||0;
+  }catch(e){el.innerHTML='<p class="center">Помилка</p>';}
+};
+setupPin('loginPin');setupPin('regPin');
+(async function(){
+  const saved=localStorage.getItem('mv_user');
+  if(!saved)return;
+  try{
+    const snap=await window._db.ref('users/'+saved+'/stats').once('value');
+    loginOk(saved,snap.val()||{});
+  }catch(e){/* stay on auth screen */}
+})();
+})();
 </script>
 <div id="coinOverlay" style="display:none"><div class="coin-scene"><div class="coin" id="theCoin"><div class="coin-face" id="coinFront"></div><div class="coin-face back" id="coinBack"></div></div></div><div class="coin-lbl" id="coinLbl">🪙 Підкидаємо…</div></div>
 </body>
