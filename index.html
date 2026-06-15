@@ -2035,7 +2035,13 @@ function onlineCreate(){
   showOnlinePane('host');
   $('onlineCode').textContent = code.split('').join(' ');
   $('onlineHostStatus').textContent = 'Підключення до сервера…';
-  const peer = new Peer(PEER_PREFIX+code, {debug:1});
+  const peer = new Peer(PEER_PREFIX+code, {debug:1, config:{iceServers:[
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:19302'},
+    {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject',credentialType:'password'},
+  ]}});
   NET.peer=peer;
   peer.on('open', ()=>{ $('onlineHostStatus').textContent = 'Очікування суперника… Скинь код другові.'; });
   peer.on('error', (err)=>{
@@ -2060,7 +2066,13 @@ function onlineConnect(){
   netClose();
   NET.myIdx=1; NET.code=code;
   $('onlineJoinStatus').textContent='Підключення…';
-  const peer=new Peer({debug:1});
+  const peer=new Peer({debug:1, config:{iceServers:[
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:19302'},
+    {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject',credentialType:'password'},
+  ]}});
   NET.peer=peer;
   peer.on('open', ()=>{
     const conn=peer.connect(PEER_PREFIX+code, {reliable:true});
