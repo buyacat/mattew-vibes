@@ -350,7 +350,7 @@
     .vs{display:none;}
   }
   @media (max-width:480px){
-    :root{--cell:clamp(28px,8.5vw,34px);}
+    :root{--cell:33px;}
     body{padding:6px;}
     .panel{padding:10px;border-radius:10px;}
     h1{font-size:16px;letter-spacing:1px;}
@@ -814,6 +814,7 @@ function updateUnitPos(){
     u.el.style.transform='translate('+(u.x*c)+'px,'+(u.y*c)+'px)';
   }
 }
+window.addEventListener('resize',()=>{ if(G&&!abort) updateUnitPos(); });
 
 /* ---------- HUD render ---------- */
 function fxIcons(u){
