@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Mattew Vibes</title>
+<title>Ivan's Revenge</title>
 <style>
   :root{
     --cell:64px;
@@ -390,8 +390,8 @@
 <!-- ===================== MENU ===================== -->
 <div id="menu" class="panel">
   <div class="center">
-    <h1>🐱 MATTEW VIBES</h1>
-    <div class="hero-img"><span>🐈</span><span>🔪</span><span>🦆</span></div>
+    <h1>IVAN'S REVENGE</h1>
+    <div class="hero-img"><span class="char-cat">🐱</span><span class="char-owl">🦉</span><span class="char-rabbit flame-rabbit">🐇</span></div>
   </div>
   <div class="center" style="margin-top:6px">
     <span class="loretip" tabindex="0">📜 Передісторія (наведи)
@@ -469,6 +469,7 @@
     <div class="badge">Раунд: <span id="roundN">1</span> · <span id="turnLbl">Хід Івана Готівки</span></div>
     <div class="badge">Дії: <span class="pips" id="pips"></span></div>
     <button class="btn menubtn" onclick="returnToMenu()">🏠 Меню</button>
+    <button class="btn menubtn" id="voiceBtn" style="display:none" onclick="openVoiceChat()">🎤 Голос</button>
   </div>
 
   <div class="vsbar">
@@ -1421,10 +1422,8 @@ function tapChallenge({title,duration,goal,sub}){
     $('tapMeter').style.width='0%';
     $('tapTime').style.width='100%';
     $('ovTap').classList.add('show');
-    const btn=$('tapBtn');
     const onTap=()=>{ if(done)return; taps++; $('tapMeter').style.width=Math.min(100,100*taps/goal)+'%';
       if(taps>=goal) finish(); };
-    btn.onclick=onTap;
     $('ovTap').addEventListener('pointerdown',onTap);
     const onKey=()=>{ if(!done) onTap(); };
     document.addEventListener('keydown',onKey);
@@ -1436,7 +1435,7 @@ function tapChallenge({title,duration,goal,sub}){
     },50);
     function finish(){
       if(done)return; done=true; clearInterval(tick);
-      btn.onclick=null; $('ovTap').removeEventListener('pointerdown',onTap); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
+      $('ovTap').removeEventListener('pointerdown',onTap); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
       resolve({taps,success:taps>=goal});
     }
   });
@@ -1871,6 +1870,7 @@ function startPvp(){
       anchors:[], knife:null };
   buildBoard();
   $('missionBadge').textContent='⚔️ PvP — 2 гравці';
+  $('voiceBtn').style.display=NET.online?'':'none';
   $('catName').textContent=p0.name;
   $('enName').textContent=p1.name;
   (function(){ const sf=(el,u,fl)=>{ el.textContent=''; if(u.char&&u.char.key==='papa') el.appendChild(papaCanvas(36,'idle',fl)); else if(typeof setPixel==='function') setPixel(el,u.emoji,40,22); else el.textContent=u.emoji; }; sf($('catFace'),p0,false); sf($('enFace'),p1,true); })();
@@ -2004,7 +2004,7 @@ function pvpAbility(ab){
   }
   if(ab.type==='tap'){
     G.busy=true; render();
-    tapChallenge({title:ab.name+' — тисни ПРОБІЛ!',duration:ab.dur,goal:ab.goal,sub:'Натискай якнайшвидше!'})
+    tapChallenge({title:ab.name+' — тапай!',duration:ab.dur,goal:ab.goal,sub:'Тап по екрану або клавіша — якнайшвидше!'})
       .then(res=>{
         if(abort||!G) return;
         const frac=clamp(res.taps/ab.goal,0,1);
@@ -2454,6 +2454,10 @@ document.querySelectorAll('.hero-img span').forEach((s,i)=>{
   if(i===0) s.appendChild(catCanvas(46,'idle',false));   // Кіт-герой (джинси + AC/DC)
   else if(e) s.appendChild(pixelEmoji(e, 52, 24));
 });
+function openVoiceChat(){
+  if(!NET.code){ alert('Спочатку почніть онлайн-гру!'); return; }
+  window.open('https://meet.jit.si/MVibes-'+NET.code,'_blank','width=420,height=320,toolbar=no,menubar=no');
+}
 function showCoinFlip(p0,p1,cb){
   const ov=$('coinOverlay'), coin=$('theCoin');
   const mkAv=(unit,fl)=>{
