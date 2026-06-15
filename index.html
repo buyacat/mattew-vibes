@@ -885,7 +885,7 @@ function renderControls(){
   A.push(b('📖 Книга','book', playerTurn && cat.fx.dizzy===0, 0, cat.fx.dizzy>0?'💫 Головокружіння':'Заклинання (1 раз/бій)'));
   let html='';
   for(const a of A){
-    html+='<button class="btn actbtn'+(G.selected===a.action?' gold':'')+'" '+(a.on?'':'disabled')+
+    html+='<button class="btn actbtn'+(G.selected===a.action?' gold':'')+(a.action==='book'?' bookbtn':'')+'" '+(a.on?'':'disabled')+
       ' title="'+a.title+'" onclick="chooseAction(\''+a.action+'\')">'+a.label+
       (a.cost>0?'<span class="cost">'+a.cost+'</span>':'')+'</button>';
   }
@@ -1104,14 +1104,17 @@ function openSpells(){
 }
 function closeSpells(){ $('ovSpell').classList.remove('show'); }
 function castSpell(k){
-  if(G.spells[k]||G.cat.fx.dizzy>0) return;
-  G.spells[k]=true; closeSpells();
-  const cat=G.cat, en=G.enemy;
-  if(k==='fish'){ cat.hp=Math.min(cat.maxHp,cat.hp+25); pop(cat,'+25','#76c95b'); log('🐟 Рибка: +25 HP.'); spend(1); }
-  else if(k==='mouse'){ cat.buff.mouse=2; pop(cat,'🐭','#ffd27a'); log('🐭 Мишка: +30% урону на 2 раунди.'); spend(1); }
-  else if(k==='sausage'){ G.maxActions+=1; G.actions+=1; pop(cat,'🌭','#ffd27a'); log('🌭 Сосиска: +1 дія цього раунду.'); render(); }
-  else if(k==='tail'){ G.enemyPenalty=true; pop(en,'−1','#ff9b2e'); log('🐈 Хвіст: ворог втратить 1 дію.'); spend(1); }
-  else if(k==='meow'){ G.selected='meow'; setHint('М\'яв: клікни клітину, куди закинути ворога.'); render(); }
+  const sp=G.mode==='pvp'?G.players[G.active].spells:G.spells;
+  const cat=G.mode==='pvp'?G.players[G.active]:G.cat;
+  const en=G.mode==='pvp'?G.players[1-G.active]:G.enemy;
+  if(sp[k]||cat.fx.dizzy>0) return;
+  sp[k]=true; closeSpells();
+  if(k==='fish'){ cat.hp=Math.min(cat.maxHp,cat.hp+25); pop(cat,'+25','#76c95b'); log(cat.name+': 🐟 Рибка: +25 HP.'); spend(1); }
+  else if(k==='mouse'){ cat.buff.mouse=2; pop(cat,'🐭','#ffd27a'); log(cat.name+': 🐭 Мишка: +30% урону на 2 раунди.'); spend(1); }
+  else if(k==='sausage'){ G.maxActions+=1; G.actions+=1; pop(cat,'🌭','#ffd27a'); log(cat.name+': 🌭 Сосиска: +1 дія.'); render(); }
+  else if(k==='tail'){ if(G.mode==='pvp') en.penalty=true; else G.enemyPenalty=true; pop(en,'−1','#ff9b2e'); log(cat.name+': 🐈 Хвіст: ворог втратить 1 дію.'); spend(1); }
+  else if(k==='meow'){ G.selected='meow'; setHint('М' + [char]39 + 'яв: клікни клітину, куди закинути ворога.'); render(); }
+  if(G.mode==='pvp' && netCanSend()) netSend({t:'spell',k});
 }
 function doMeow(x,y){
   const en=G.enemy;
