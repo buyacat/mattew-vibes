@@ -1852,8 +1852,7 @@ function startPvp(){
   $('missionBadge').textContent='⚔️ PvP — 2 гравці';
   $('catName').textContent=p0.name;
   $('enName').textContent=p1.name;
-  if(typeof setPixel==='function'){ setPixel($('catFace'),p0.emoji,40,22); setPixel($('enFace'),p1.emoji,40,22); }
-  else { $('catFace').textContent=p0.emoji; $('enFace').textContent=p1.emoji; }
+  (function(){ const sf=(el,u,fl)=>{ el.textContent=''; if(u.char&&u.char.key==='papa') el.appendChild(papaCanvas(36,'idle',fl)); else if(typeof setPixel==='function') setPixel(el,u.emoji,40,22); else el.textContent=u.emoji; }; sf($('catFace'),p0,false); sf($('enFace'),p1,true); })();
   $('log').innerHTML='';
   placeUnits();
   log('<b>1х1!</b> Гравець 1 ('+p0.name+') проти Гравця 2 ('+p1.name+')');
@@ -2038,8 +2037,10 @@ function pvpAbility(ab){
     return;
   }
   if(ab.type==='boomerang'){
-    const dmg=Math.floor(Math.random()*100)+1;
-    if(netCanSend()) netSend({t:'boom',id:ab.id,dmg});
+    let dmg=Math.floor(Math.random()*31)+10;
+    const passiveBonus=me.char&&me.char.key==='papa'&&cheb(me,foe)<4;
+    if(passiveBonus) dmg=Math.round(dmg*1.2);
+    if(netCanSend()) netSend({t:'boom',id:ab.id,dmg,passiveBonus});
     applyBoomerang(ab,dmg);
     return;
   }
@@ -2271,7 +2272,7 @@ function onPeerGone(){
   });
 }
 function findActiveAb(id){ return (G && G.players) ? G.players[G.active].char.abilities.find(a=>a.id===id) : null; }
-function applyBoomerang(ab, dmg){
+function applyBoomerang(ab, dmg, passiveBonus){
   if(!G||abort) return;
   G.busy=true;
   const me=G.players[G.active], foe=G.players[1-G.active];
@@ -2285,7 +2286,7 @@ function applyBoomerang(ab, dmg){
       if(abort||!G) return;
       shake(foe);
       hurt(foe,dmg,false);
-      const sfx = dmg>=90?' 💥 КРИТ!!!':dmg<=10?' 😅 ледь долетів…':'';
+      const sfx = passiveBonus?' 🔥 впритул +20%!':'';
       log(me.name+': 💻 Ноутбук-бумеранг — <b>'+dmg+'</b> урону!'+sfx);
       if(G&&!abort&&G.phase!=='ended'){ G.busy=false; pvpAfter(); }
     },390);
@@ -2330,7 +2331,7 @@ function netRecv(data){
     case 'bandage': pvpBandage(); break;
     case 'tap': { const ab=findActiveAb(data.id); if(ab){ G.busy=true; applyTapResult(ab, data.dmg, data.taps); } break; }
     case 'endTurn': endTurnPvp(); break;
-    case 'boom': { const ab=findActiveAb(data.id); if(ab) applyBoomerang(ab,data.dmg); break; }
+    case 'boom': { const ab=findActiveAb(data.id); if(ab) applyBoomerang(ab,data.dmg,data.passiveBonus); break; }
   }
 }
 
