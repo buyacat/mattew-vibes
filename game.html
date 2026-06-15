@@ -2128,6 +2128,7 @@ function renderPvpControls(){
   html+=mk('🏃 Рух','move',can(1)&&me.fx.fear===0,1);
   for(const a of me.char.abilities){ html+=mk(a.name,'ab:'+a.id,can(a.cost),a.cost); }
   if(me.fx.bleed) html+=mk('🩹 Перев\'язка','bandage',can(2),2);
+  html+=mk('📖 Книга','book', playerTurn && me.fx.dizzy===0, 0);
   html+='<button class="btn red actbtn" '+(playerTurn?'':'disabled')+' onclick="pvpEndTurnBtn()">⏭️ Кінець ходу</button>';
   box.innerHTML=html;
 }
