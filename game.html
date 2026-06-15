@@ -391,7 +391,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
-#authOverlay{position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#17242b,#10171c 60%,#0a0f12);display:flex;align-items:center;justify-content:center;padding:14px;}
+#authOverlay{position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#17242b,#10171c 60%,#0a0f12);display:none;align-items:center;justify-content:center;padding:14px;}
 #authOverlay .panel{width:100%;max-width:380px;}
 .pin-input{display:flex;gap:8px;justify-content:center;margin:10px 0;}
 .pin-input input{width:52px;height:62px;text-align:center;font-size:28px;font-weight:bold;font-family:'Courier New',monospace;background:#fff7e0;border:3px solid var(--wood);border-radius:10px;color:var(--ink);caret-color:transparent;outline:none;}
@@ -689,7 +689,7 @@ const ENEMIES = [
     key:'owl', name:'Сова', emoji:'🦉', hp:70, move:10,
     abilities:[
       {id:'fall',    name:'Падіння з пітьми', dmg:45, range:3, special:'tap'},
-      {id:'feather', name:'Кидок пір\'я',     dmg:7,  range:5, proj:'🪶', bleed:true},
+      {id:'feather', name:'Кидок пір\'я',     dmg:12, range:5, proj:'🪶', bleed:true},
     ]
   },
   {
