@@ -1801,11 +1801,12 @@ function renderPvpSelect(){
       const ab=c.abilities.map(a=>a.name).join(' · ');
       const click = locked ? '' : ' onclick="pickChar('+p+',\''+c.key+'\')"';
       return '<div class="charcard'+(sel?' sel':'')+(locked?' locked':'')+'"'+click+'>'+
-        '<div class="cface">'+c.emoji+'</div>'+
+        '<div class="cface'+(c.key==='papa'?' papa-spr':'')+'">'+( c.key==='papa'?'':c.emoji)+'</div>'+
         '<div class="cinfo"><b>'+c.name+'</b>'+
         '<small>❤️ '+c.hp+' · 🏃 рух '+c.move+'</small>'+
         '<small>'+ab+'</small></div></div>';
     }).join('');
+    box.querySelectorAll('.papa-spr').forEach(el=>el.appendChild(papaCanvas(40,'idle',false)));
   }
   if($('pvpP0title')) $('pvpP0title').textContent = '🔵 Гравець 1'+(NET.online&&NET.myIdx===0?' (ти)':'');
   if($('pvpP1title')) $('pvpP1title').textContent = '🔴 Гравець 2'+(NET.online&&NET.myIdx===1?' (ти)':'');
