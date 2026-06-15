@@ -415,6 +415,19 @@
 .hist-badge{font-size:11px;font-weight:bold;padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
 .hist-badge.win{background:#4f9c3c;color:#fff;}
 .hist-badge.loss{background:#bd3d31;color:#fff;}
+#ratingOverlay{position:fixed;inset:0;z-index:150;background:rgba(10,15,18,.92);display:none;align-items:center;justify-content:center;padding:14px;overflow-y:auto;}
+#ratingOverlay.show{display:flex;}
+#ratingOverlay .panel{width:100%;max-width:600px;max-height:90vh;overflow-y:auto;}
+.rating-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--wood);font-size:14px;}
+.rating-row:last-child{border-bottom:none;}
+.rating-rank{font-family:'Courier New',monospace;font-weight:bold;min-width:28px;text-align:center;font-size:16px;}
+.rating-rank.gold{color:var(--gold);}
+.rating-rank.silver{color:#b0b8c4;}
+.rating-rank.bronze{color:#cd7f32;}
+.rating-nick{flex:1;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rating-nick.me{color:var(--neon);}
+.rating-score{font-family:'Courier New',monospace;font-weight:bold;color:var(--neon);min-width:54px;text-align:right;}
+.rating-wr{font-size:12px;opacity:.7;min-width:38px;text-align:right;}
 </style></head>
 <body>
 <script>document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault();},{passive:false});var _lt=0;document.addEventListener('touchend',function(e){var t=Date.now();if(t-_lt<300)e.preventDefault();_lt=t;},{passive:false});</script>
@@ -477,6 +490,16 @@
   </div>
 </div>
 
+<div id="ratingOverlay">
+  <div class="panel">
+    <div class="center"><h2>🏆 Рейтинг гравців</h2></div>
+    <div id="ratingContent" style="margin:10px 0"></div>
+    <div class="center" style="margin-top:12px">
+      <button class="btn" onclick="document.getElementById('ratingOverlay').classList.remove('show')">✖ Закрити</button>
+    </div>
+  </div>
+</div>
+
 <div id="authUserBadge" onclick="openStats()"></div>
 <!-- ===================== MENU ===================== -->
 <div id="menu" class="panel">
@@ -502,10 +525,14 @@
   </div>
   <div class="center" style="margin-top:4px">
     <button class="btn green" onclick="openOnline()">🌐 PvP онлайн</button>
+    <button class="btn" onclick="openRating()" style="background:linear-gradient(180deg,#b8861a,#8c610d);border-bottom-color:#5e3d00">🏆 Рейтинг</button>
   </div>
-  <div id="pwaInstallBar" style="display:none;text-align:center;margin-top:6px">
-    <button class="btn" id="pwaBtn" onclick="pwaTrigger()" style="font-size:13px;opacity:.85">📲 Додати на екран</button>
-    <div id="pwaIosHint" style="display:none;font-size:11px;color:#7a5020;margin-top:4px;padding:0 8px">Натисни <b>Поділитись</b> → <b>На екран «Домівка»</b></div>
+  <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+    <button class="btn" id="menuMusicBtn" onclick="toggleMusic()" style="font-size:13px;opacity:.8">🔇 Звук</button>
+    <div id="pwaInstallBar" style="display:none">
+      <button class="btn" id="pwaBtn" onclick="pwaTrigger()" style="font-size:13px;opacity:.8">📲 Додати на екран</button>
+      <div id="pwaIosHint" style="display:none;font-size:11px;color:#7a5020;margin-top:4px;padding:0 8px">Натисни <b>Поділитись</b> → <b>На екран «Домівка»</b></div>
+    </div>
   </div>
   <div class="center" style="margin-top:8px;border-top:1px dashed var(--wood);padding-top:8px" id="authMenuBtns">
     <button class="btn" onclick="openAuth('login')" style="font-size:13px;opacity:.85">🔑 Увійти</button>
@@ -2763,6 +2790,7 @@ function toggleMusic(){
   const btn=$('musicBtn');
   btn.classList.toggle('loud',loud);
   btn.title = loud?'Музика: гучно':'Музика: тихо';
+  const mb=$('menuMusicBtn'); if(mb) mb.textContent=loud?'🎵 Звук':'🔇 Звук';
 }
 /* автозапуск (тихо) при першій взаємодії — браузери блокують звук без жесту */
 function primeMusic(){
@@ -2931,6 +2959,34 @@ window.openStats=async function(){
     el.innerHTML=html;
     window._user.wins=s.wins||0;window._user.losses=s.losses||0;
   }catch(e){el.innerHTML='<p class="center">Помилка</p>';}
+};
+window.openRating=async function(){
+  const el=document.getElementById('ratingContent');
+  el.innerHTML='<p class="center muted">Завантаження…</p>';
+  document.getElementById('ratingOverlay').classList.add('show');
+  try{
+    const snap=await window._db.ref('users').once('value');
+    const all=snap.val()||{};
+    const rows=Object.entries(all).map(function([nick,u]){
+      const s=(u&&u.stats)||{wins:0,losses:0};
+      const w=s.wins||0; const l=s.losses||0; const t=w+l;
+      const score=t===0?0:Math.round((w/t)*Math.log2(w+1)*100);
+      const wr=t?Math.round(w/t*100):0;
+      return{nick,w,l,t,score,wr};
+    });
+    rows.sort(function(a,b){return b.score-a.score;});
+    const me=window._user?window._user.nick:null;
+    if(!rows.length){el.innerHTML='<p class="center muted">Ще немає гравців</p>';return;}
+    let html='<div style="font-size:11px;opacity:.6;text-align:right;margin-bottom:6px">Рейтинг = WR × log₂(перемоги+1) × 100</div>';
+    rows.forEach(function(r,i){
+      const rank=i+1;
+      const rankCls=rank===1?'gold':rank===2?'silver':rank===3?'bronze':''';
+      const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
+      const nickCls=r.nick===me?' me':''';
+      html+='<div class="rating-row"><span class="rating-rank '+rankCls+'">'+medal+'</span><span class="rating-nick'+nickCls+'">'+(r.nick===me?'⚡ ':'')+r.nick+'</span><span class="rating-wr">'+r.wr+'%</span><span style="font-size:12px;opacity:.6;min-width:60px;text-align:right">'+r.w+'W / '+r.l+'L</span><span class="rating-score">'+r.score+'</span></div>';
+    });
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<p class="center">Помилка завантаження</p>';}
 };
 setupPin('loginPin');setupPin('regPin');
 (async function(){
