@@ -1,0 +1,2251 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mattew Vibes</title>
+<style>
+  :root{
+    --cell:64px;
+    --wood:#7c5230; --wood2:#5e3d22;
+    --parch:#f3e2c0; --parch2:#e7cf9f;
+    --ink:#3a2a14;
+    /* лабораторна підлога замість трави */
+    --grass:#27343b; --grass2:#212c32;
+    --hp:#e0473a; --hp2:#ff7a5a;
+    --gold:#f6c945;
+    /* трохи кіберпанк-нуар неону 80-х */
+    --neon:#39e6ff; --neon2:#ff4fa3;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:'Trebuchet MS','Segoe UI',Verdana,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 560px at 50% -12%, rgba(57,230,255,.16), transparent),
+      radial-gradient(900px 500px at 92% 108%, rgba(255,79,163,.12), transparent),
+      linear-gradient(160deg,#17242b,#10171c 60%, #0a0f12);
+    min-height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:14px; overflow-x:hidden;
+  }
+  .wrap{width:100%; max-width:980px;}
+  .panel{
+    background:linear-gradient(180deg,var(--parch),var(--parch2));
+    border:4px solid var(--wood);
+    border-radius:16px;
+    box-shadow:0 10px 0 var(--wood2), 0 16px 30px rgba(0,0,0,.35), inset 0 0 0 2px #fff7e0;
+    padding:18px;
+  }
+  h1{font-family:'Courier New',monospace;font-size:28px;margin:.1em 0 .2em;letter-spacing:2px;
+    text-transform:uppercase;color:#2a1d0e;
+    text-shadow:2px 0 rgba(255,79,163,.55), -2px 0 rgba(57,230,255,.55), 1px 1px 0 #fff7e0;}
+  h2{margin:.2em 0;}
+  .muted{opacity:.8}
+  .btn{
+    cursor:pointer; user-select:none;
+    font:inherit; font-weight:bold; color:#fff;
+    background:linear-gradient(180deg,#9a6a3c,#7c5230);
+    border:none; border-bottom:4px solid #5e3d22;
+    border-radius:12px; padding:11px 16px; margin:4px;
+    box-shadow:0 3px 8px rgba(0,0,0,.25);
+    transition:transform .08s, filter .12s, opacity .12s;
+    text-shadow:0 1px 1px rgba(0,0,0,.35);
+  }
+  .btn:hover{filter:brightness(1.08); transform:translateY(-1px);}
+  .btn:active{transform:translateY(2px); border-bottom-width:2px;}
+  .btn.gold{background:linear-gradient(180deg,#ffd75e,#f0b224);border-bottom-color:#c98c0d;color:#4a2f00;text-shadow:none;}
+  .btn.green{background:linear-gradient(180deg,#76c95b,#4f9c3c);border-bottom-color:#3a7a2c;}
+  .btn.red{background:linear-gradient(180deg,#e0675a,#bd3d31);border-bottom-color:#8f291f;}
+  .btn:disabled{opacity:.42; cursor:not-allowed; filter:grayscale(.5); transform:none;}
+  .center{text-align:center;}
+  .row{display:flex; gap:12px; flex-wrap:wrap;}
+  .lore{line-height:1.55; font-size:15px; background:#fff7e0; border:2px dashed var(--wood); border-radius:12px; padding:14px;}
+  /* легенда як підказка при наведенні */
+  .loretip{position:relative; display:inline-block; cursor:help; font-weight:bold;
+    color:#2a1d0e; border-bottom:2px dotted var(--wood); padding-bottom:2px;}
+  .loretip .tip{
+    position:absolute; left:50%; bottom:calc(100% + 12px);
+    transform:translateX(-50%) translateY(6px);
+    width:min(440px,86vw); text-align:left; line-height:1.55; font-size:14px; font-weight:normal;
+    background:#fff7e0; color:var(--ink); border:2px dashed var(--wood); border-radius:12px; padding:14px;
+    box-shadow:0 10px 24px rgba(0,0,0,.4);
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .18s, transform .18s; z-index:40;}
+  .loretip:hover .tip, .loretip:focus .tip, .loretip:focus-within .tip{
+    opacity:1; visibility:visible; transform:translateX(-50%) translateY(0);}
+  .loretip .tip::after{content:''; position:absolute; left:50%; top:100%; transform:translateX(-50%);
+    border:8px solid transparent; border-top-color:var(--wood);}
+  .hero-img{display:flex;gap:14px;justify-content:center;margin:10px 0;font-size:54px;}
+  .hero-img span{filter:drop-shadow(2px 2px 0 rgba(0,0,0,.45)) drop-shadow(0 0 11px rgba(57,230,255,.45)) contrast(1.1) saturate(1.2);animation:bob 2.4s ease-in-out infinite;}
+  .hero-img span:nth-child(3){filter:drop-shadow(2px 2px 0 rgba(0,0,0,.45)) drop-shadow(0 0 11px rgba(255,79,163,.45)) contrast(1.1) saturate(1.2);}
+
+  /* ---------- Battle layout ---------- */
+  #battle{display:none;}
+  #pvpSelect{display:none;}   /* екран вибору PvP схований, поки не натиснуть «PvP» у меню */
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .badge{background:#fff7e0;border:2px solid var(--wood);border-radius:6px;padding:5px 13px;
+    font-family:'Courier New',monospace;font-weight:bold;text-transform:uppercase;letter-spacing:.5px;
+    box-shadow:2px 2px 0 var(--wood2);}
+  .pips{display:inline-flex;gap:5px;vertical-align:middle}
+  .pip{width:16px;height:16px;border-radius:50%;background:#cdb78a;border:2px solid var(--wood);}
+  .pip.on{background:var(--gold);box-shadow:0 0 6px var(--gold);}
+
+  .arena{display:flex;gap:12px;align-items:stretch;justify-content:center;flex-wrap:wrap;}
+  .hpbar{height:18px;background:#3a2a14;border-radius:10px;overflow:hidden;margin:6px 0 4px;border:2px solid #2a1d0e;position:relative;}
+  .hpfill{height:100%;background:linear-gradient(180deg,var(--hp2),var(--hp));transition:width .4s ease;border-radius:8px 0 0 8px;}
+  .hptext{font-size:12px;font-weight:bold;}
+  .fx{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;min-height:22px;margin-top:5px;}
+  .fx span{font-size:13px;background:#3a2a14;color:#fff;border-radius:8px;padding:1px 5px;}
+
+  /* ---------- VS avatar header (player left · opponent right) ---------- */
+  .vsbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .fighter{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:10px;
+    background:#fff7e0;border:3px solid var(--wood);border-radius:14px;padding:8px 12px;
+    box-shadow:0 3px 0 var(--wood2), inset 0 0 0 2px #fffdf3;}
+  .fighter.right{justify-content:flex-end;text-align:right;}
+  .finfo{flex:1 1 auto;min-width:0;}
+  .fname{font-size:15px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  /* портрет істоти в стилі Heroes 3 — золота різьблена рамка, мала фігурка на «арені» */
+  .avatar{flex:0 0 54px;width:54px;height:62px;--glow:var(--neon);
+    display:flex;align-items:flex-end;justify-content:center;
+    background:linear-gradient(180deg,#243640 0%, #16242b 55%, #0a1216 100%);
+    border:2px solid #6b4a1e;border-radius:3px;position:relative;overflow:hidden;
+    box-shadow:inset 0 0 0 1px #f6c945, inset 0 -11px 14px rgba(0,0,0,.55),
+      0 0 0 2px #b9892f, 0 0 0 4px #2a1d0e,
+      3px 3px 0 rgba(0,0,0,.45), 0 0 12px rgba(57,230,255,.22);}
+  /* CRT-розгортка поверх портрета */
+  .avatar::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px);}
+  .avatar span{display:block;position:relative;z-index:1;margin-bottom:3px;line-height:0;
+    filter:drop-shadow(1px 2px 0 rgba(0,0,0,.6)) drop-shadow(0 0 6px var(--glow)) contrast(1.1) saturate(1.2);
+    animation:bob 2.6s ease-in-out infinite;}
+  /* ворог праворуч — малиновий неон */
+  .fighter.right .avatar{--glow:var(--neon2);
+    box-shadow:inset 0 0 0 1px #f6c945, inset 0 -11px 14px rgba(0,0,0,.55),
+      0 0 0 2px #b9892f, 0 0 0 4px #2a1d0e,
+      -3px 3px 0 rgba(0,0,0,.45), 0 0 12px rgba(255,79,163,.22);}
+  /* справжній піксель-арт: масштаб без згладжування */
+  .px{display:block;image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges;}
+  .vs{flex:0 0 auto;font-size:22px;opacity:.85;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3));}
+  .fighter .fx{justify-content:flex-start;}
+  .fighter.right .fx{justify-content:flex-end;}
+
+  /* board */
+  .boardwrap{display:flex;flex-direction:column;align-items:center;}
+  #board{position:relative;width:calc(var(--cell)*10);height:calc(var(--cell)*5);
+    border:4px solid #0b1216;border-radius:10px;overflow:hidden;
+    box-shadow:inset 0 0 55px rgba(0,0,0,.6), 0 0 0 2px rgba(57,230,255,.22),
+      0 0 18px rgba(57,230,255,.18), 0 8px 18px rgba(0,0,0,.5);}
+  /* CRT-розгортка — легкий аркадний скан 80-х */
+  #board::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+    mix-blend-mode:multiply;}
+  #tiles{position:absolute;inset:0;display:grid;
+    grid-template-columns:repeat(10,var(--cell));grid-template-rows:repeat(5,var(--cell));}
+  .cell{position:relative;outline:1px solid rgba(57,230,255,.10);
+    background:var(--grass);transition:background .12s,box-shadow .12s;}
+  .cell.alt{background:var(--grass2);}
+  .cell:hover{filter:brightness(1.25);}
+  .cell.move{background:#9fd0ff;box-shadow:inset 0 0 0 3px #4aa3ff;cursor:pointer;}
+  .cell.tgt{background:#ffd27a;box-shadow:inset 0 0 0 3px #ff9b2e;cursor:crosshair;}
+  .cell.place{background:#c8a6ff;box-shadow:inset 0 0 0 3px #8a4dff;cursor:pointer;}
+  .cell.anchorpick{background:#bff7d8;box-shadow:inset 0 0 0 3px #2fbf6f;cursor:pointer;}
+  .cell .anchor{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;opacity:.85;pointer-events:none;}
+  .cell .knife{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px;pointer-events:none;animation:bob 2s infinite;}
+
+  #units{position:absolute;inset:0;pointer-events:none;}
+  .unit{position:absolute;left:0;top:0;width:var(--cell);height:var(--cell);
+    display:flex;align-items:flex-end;justify-content:center;
+    transition:transform .35s cubic-bezier(.3,1.4,.5,1);}
+  .uinner{font-size:42px;line-height:1;filter:drop-shadow(0 6px 3px rgba(0,0,0,.35));
+    animation:bob 2.2s ease-in-out infinite;transform-origin:bottom center;}
+  /* фішки на полі — легке неонове підсвічування по сторонах */
+  .unit.u-ally .uinner{filter:drop-shadow(0 5px 3px rgba(0,0,0,.45)) drop-shadow(0 0 6px rgba(57,230,255,.42));}
+  .unit.u-foe  .uinner{filter:drop-shadow(0 5px 3px rgba(0,0,0,.45)) drop-shadow(0 0 6px rgba(255,79,163,.42));}
+  .uinner.punch{animation:punch .35s ease;}
+  .uinner.shake{animation:shake .4s ease;}
+  .uinner.walking{animation:walk .2s ease-in-out infinite;}
+  @keyframes walk{0%{transform:translateY(0)}50%{transform:translateY(-4px)}100%{transform:translateY(0)}}
+  .shadow{position:absolute;bottom:6px;left:50%;width:36px;height:12px;transform:translateX(-50%);
+    background:radial-gradient(closest-side,rgba(0,0,0,.4),transparent);border-radius:50%;}
+  .pop{position:absolute;left:0;top:0;width:var(--cell);text-align:center;font-weight:900;font-size:20px;
+    pointer-events:none;text-shadow:0 2px 3px rgba(0,0,0,.5);animation:pop 1s ease forwards;z-index:5;}
+  .proj{position:absolute;left:0;top:0;width:var(--cell);height:var(--cell);display:flex;align-items:center;justify-content:center;
+    font-size:26px;pointer-events:none;transition:transform .32s linear;z-index:4;}
+
+  /* ---------- Морквяна ракета Кролика (дістає моркву → під землю → у небо) ---------- */
+  .cellfx{position:absolute;left:0;top:0;width:var(--cell);height:var(--cell);
+    display:flex;align-items:center;justify-content:center;font-size:30px;
+    pointer-events:none;z-index:5;}
+  .cellfx span{display:inline-block;line-height:1;filter:drop-shadow(0 3px 2px rgba(0,0,0,.4));}
+  .fx-carrot span{font-size:34px;animation:carrotGrow .54s cubic-bezier(.3,1.5,.5,1) forwards;}
+  @keyframes carrotGrow{0%{opacity:0;transform:scale(.2) translateY(24px)}
+    60%{opacity:1;transform:scale(1.25) translateY(-6px)}100%{transform:scale(1) translateY(0)}}
+  .fx-dust span{font-size:28px;animation:dustPuff .6s ease forwards;}
+  @keyframes dustPuff{0%{opacity:0;transform:scale(.5)}25%{opacity:.95}
+    100%{opacity:0;transform:scale(1.8) translateY(-12px)}}
+  .fx-boom span{font-size:42px;animation:boomFx .62s ease forwards;}
+  @keyframes boomFx{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.5)}
+    100%{opacity:.5;transform:scale(2.1)}}
+  .fx-mound span{font-size:26px;animation:moundBob .26s ease-in-out infinite alternate;}
+  @keyframes moundBob{from{transform:translateY(3px)}to{transform:translateY(-5px)}}
+  .fx-float span{font-size:30px;animation:floatUp .9s ease forwards;}
+  @keyframes floatUp{0%{opacity:0;transform:translateY(-26px)}30%{opacity:1}
+    100%{opacity:0;transform:translateY(12px)}}
+  /* ракета летить у небо — fixed-елемент, щоб борд не обрізав політ нагору */
+  .skyrocket{position:fixed;z-index:65;pointer-events:none;text-align:center;
+    transform:translate(-50%,0);will-change:transform,opacity;
+    filter:drop-shadow(0 0 12px rgba(255,160,40,.85)) drop-shadow(0 0 4px rgba(255,80,40,.7));}
+  .skyrocket .sr-rab{font-size:30px;line-height:.8;}
+  .skyrocket .sr-car{font-size:40px;line-height:.66;}
+  .skyrocket .sr-fire{font-size:24px;line-height:.7;animation:srFlame .1s infinite alternate;}
+  @keyframes srFlame{from{transform:scaleY(1);opacity:.8}to{transform:scaleY(1.6);opacity:1}}
+  /* speech bubble with folk curses — fixed overlay, not clipped by the board */
+  .bubble{position:fixed;z-index:60;pointer-events:none;transform:translate(-50%,-100%);will-change:transform;}
+  .bubble b{position:relative;display:inline-block;
+    background:#f3e2c0;color:#1d1408;
+    border:2px solid #11181d;border-radius:3px;padding:3px 9px;
+    font-family:'Courier New',monospace;font-weight:900;font-size:13px;
+    letter-spacing:.5px;white-space:nowrap;text-transform:uppercase;
+    box-shadow:3px 3px 0 #11181d, 0 0 12px rgba(57,230,255,.35);
+    transform-origin:bottom center;animation:say 1.6s ease forwards;}
+  .bubble b::after{content:'';position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);
+    border:5px solid transparent;border-top-color:#11181d;}
+
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @keyframes say{
+    0%{opacity:0;transform:translate(0,8px) scale(.5)}
+    16%{opacity:1;transform:translate(calc(var(--dx)*.25),0) scale(1.08)}
+    28%{transform:translate(calc(var(--dx)*.45),-4px) scale(1)}
+    75%{opacity:1;transform:translate(calc(var(--dx)*.8),-26px) scale(1)}
+    100%{opacity:0;transform:translate(var(--dx),-52px) scale(1.05)}}
+  @keyframes punch{0%{transform:scale(1)}40%{transform:scale(1.35) translateY(-4px)}100%{transform:scale(1)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px) rotate(-6deg);filter:brightness(2) sepia(1) hue-rotate(-30deg)}60%{transform:translateX(6px) rotate(6deg)}}
+  @keyframes pop{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-42px);opacity:0}}
+
+  /* ---------- Сейсмострибок Кролика ---------- */
+  .fx-quakecrack span{font-size:26px;animation:quakeCrackFx .72s ease forwards;}
+  @keyframes quakeCrackFx{
+    0%{opacity:0;transform:scale(.15) rotate(-12deg)}
+    22%{opacity:1;transform:scale(1.42) rotate(6deg)}
+    55%{opacity:.95;transform:scale(1) rotate(0)}
+    100%{opacity:0;transform:scale(1.08)}}
+  @keyframes quakeShake{
+    0%,100%{transform:none}
+    12%{transform:translate(-8px,5px) rotate(-.6deg)}
+    28%{transform:translate(8px,-5px) rotate(.5deg)}
+    46%{transform:translate(-6px,3px) rotate(-.4deg)}
+    64%{transform:translate(5px,-3px) rotate(.2deg)}
+    80%{transform:translate(-3px,2px)}}
+  .quake-shake{animation:quakeShake .6s ease;}
+
+  /* controls */
+  .controls{margin-top:12px;}
+  .actbtn{position:relative;min-width:96px;}
+  .actbtn .cost{position:absolute;top:-7px;right:-7px;background:var(--gold);color:#4a2f00;
+    border:2px solid var(--wood);border-radius:50%;width:22px;height:22px;font-size:12px;line-height:18px;}
+  .hint{background:#fff7e0;border:2px solid var(--wood);border-radius:10px;padding:8px 12px;margin-top:8px;font-size:14px;min-height:20px;}
+  #log{background:#0c1418;color:#bfe9d6;border:1px solid rgba(57,230,255,.25);border-radius:8px;
+    padding:8px 12px;margin-top:10px;font-family:'Courier New',monospace;font-size:13px;
+    height:84px;overflow:auto;line-height:1.5;box-shadow:inset 0 0 18px rgba(57,230,255,.08);}
+  #log b{color:var(--gold);}
+
+  /* overlays */
+  .overlay{position:fixed;inset:0;background:rgba(20,12,4,.72);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:16px;}
+  .overlay.show{display:flex;}
+  .modal{max-width:460px;text-align:center;}
+  .tapbtn{font-size:30px;padding:26px 40px;border-radius:20px;}
+  /* ---------- Coin toss (3D-фліп) ---------- */
+  .coinStage{perspective:900px;height:170px;display:flex;align-items:center;justify-content:center;margin:14px 0 6px;}
+  .coin{position:relative;width:140px;height:140px;transform-style:preserve-3d;cursor:pointer;will-change:transform;}
+  .coin.idle{animation:coinIdle 2.6s ease-in-out infinite;}
+  .coin.flipping{cursor:default;}
+  .coinFace{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    border:7px solid #b07d12;
+    box-shadow:inset 0 0 22px rgba(0,0,0,.4), inset 0 4px 8px rgba(255,255,255,.45), 0 10px 22px rgba(0,0,0,.55);}
+  .coinFace span{font-size:50px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3));}
+  .coinFace b{font-family:'Courier New',monospace;font-size:15px;letter-spacing:2px;}
+  .coinFace.heads{background:radial-gradient(circle at 38% 30%, #ffeaa0, #e0a92c 72%);color:#6a4500;}
+  .coinFace.tails{background:radial-gradient(circle at 38% 30%, #ffd9bf, #ef8a3d 72%);color:#5e2b00;
+    transform:rotateY(180deg);}
+  @keyframes coinIdle{0%,100%{transform:rotateY(-16deg)}50%{transform:rotateY(16deg)}}
+  .coinHint{font-weight:bold;min-height:22px;}
+  .coinTap{margin-top:4px;font-size:13px;animation:coinPulse 1.1s ease-in-out infinite;}
+  @keyframes coinPulse{0%,100%{opacity:.5}50%{opacity:1}}
+  .meter{height:22px;background:#3a2a14;border-radius:12px;overflow:hidden;margin:12px 0;border:2px solid #2a1d0e;}
+  .meterfill{height:100%;width:0;background:linear-gradient(90deg,#76c95b,#f6c945);transition:width .08s;}
+  .timefill{height:8px;width:100%;background:#e0473a;transition:width .1s linear;border-radius:6px;}
+  .spellgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .spell{cursor:pointer;text-align:left;background:#fff7e0;border:3px solid var(--wood);border-radius:12px;padding:10px;transition:transform .08s;}
+  .spell:hover{transform:translateY(-2px);filter:brightness(1.03);}
+  .spell.used{opacity:.4;filter:grayscale(1);cursor:not-allowed;}
+  .spell b{font-size:16px;}
+  .spell small{display:block;opacity:.8;margin-top:3px;}
+
+  /* ---------- PvP character select ---------- */
+  #pvpSelect{display:none;}
+  .charpick{display:flex;flex-direction:column;gap:8px;margin-top:6px;}
+  .charcard{display:flex;align-items:center;gap:12px;cursor:pointer;
+    background:#fff7e0;border:3px solid var(--wood);border-radius:12px;padding:8px 12px;
+    transition:transform .08s,box-shadow .12s,background .12s;}
+  .charcard:hover{transform:translateY(-2px);filter:brightness(1.03);}
+  .charcard.sel{border-color:var(--gold);background:#fffdf3;
+    box-shadow:0 0 0 3px var(--gold),0 4px 10px rgba(0,0,0,.3);}
+  .charcard .cface{flex:0 0 auto;font-size:40px;line-height:1;filter:drop-shadow(0 3px 2px rgba(0,0,0,.3));}
+  .charcard .cinfo{min-width:0;}
+  .charcard .cinfo b{font-size:16px;}
+  .charcard .cinfo small{display:block;opacity:.82;font-size:12px;line-height:1.35;}
+  /* кнопка повернення в меню в шапці бою */
+  .topbar .menubtn{padding:5px 12px;margin:0;font-size:13px;}
+  .charcard.locked{cursor:default;opacity:.92;}
+  .charcard.locked:hover{transform:none;filter:none;}
+  /* ---------- PvP online lobby ---------- */
+  #pvpOnline{display:none;}
+  .bigcode{font-family:'Courier New',monospace;font-weight:900;font-size:52px;letter-spacing:8px;
+    color:#4a2f00;background:#fff7e0;border:3px solid var(--wood);border-radius:14px;
+    padding:14px 10px;margin:10px auto;max-width:300px;
+    box-shadow:inset 0 0 0 2px #fffdf3,0 4px 0 var(--wood2);}
+  .codeinput{font-family:'Courier New',monospace;font-weight:900;font-size:40px;letter-spacing:14px;
+    text-align:center;width:200px;max-width:90%;color:#4a2f00;
+    background:#fff7e0;border:3px solid var(--wood);border-radius:12px;padding:8px 10px;}
+  .codeinput:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold);}
+  /* ---------- music toggle ---------- */
+  #musicBtn{
+    position:fixed; top:12px; right:12px; z-index:70;
+    width:50px; height:50px; padding:0; border-radius:50%;
+    font-size:22px; line-height:1; cursor:pointer;
+    color:#4a2f00; background:linear-gradient(180deg,#ffd75e,#f0b224);
+    border:3px solid #2a1d0e; border-bottom-width:5px;
+    box-shadow:0 3px 8px rgba(0,0,0,.35), 0 0 14px rgba(57,230,255,.3);
+    transition:transform .08s, filter .12s;
+    /* тихий стан за замовчуванням: ч/б і бліде */
+    filter:grayscale(1) brightness(.85); opacity:.7;
+  }
+  #musicBtn:hover{filter:brightness(1.08); transform:translateY(-1px);}
+  #musicBtn:active{transform:translateY(2px); border-bottom-width:3px;}
+  /* гучний стан по кліку: кольорово (сама кнопка НЕ стрибає — рухається лише еквалайзер) */
+  #musicBtn.loud{filter:none; opacity:1;}
+  #musicBtn .eq{display:inline-flex;gap:2px;height:16px;align-items:flex-end;}
+  #musicBtn .eq i{width:3px;background:#4a2f00;border-radius:1px;animation:eq 1.4s ease-in-out infinite;}
+  #musicBtn .eq i:nth-child(1){height:7px;animation-delay:0s}
+  #musicBtn .eq i:nth-child(2){height:14px;animation-delay:.15s}
+  #musicBtn .eq i:nth-child(3){height:10px;animation-delay:.3s}
+  #musicBtn .eq i:nth-child(4){height:16px;animation-delay:.45s}
+  /* вимкнено — еквалайзер ледь ворушиться; ввімкнено — повна амплітуда і швидше */
+  #musicBtn.loud .eq i{animation-name:eqLoud;animation-duration:.4s;}
+  @keyframes eq{0%,100%{transform:scaleY(.8)}50%{transform:scaleY(.95)}}
+  @keyframes eqLoud{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+
+  @media (max-width:720px){
+    :root{--cell:46px;}
+    h1{font-size:22px;}
+    .actbtn{min-width:0;}
+    .avatar{flex-basis:44px;width:44px;height:44px;font-size:26px;}
+    .fighter{padding:6px 9px;gap:8px;}
+    .vs{display:none;}
+  }
+</style>
+</head>
+<body>
+<button id="musicBtn" title="Музика" onclick="toggleMusic()"><span class="eq"><i></i><i></i><i></i><i></i></span></button>
+<div class="wrap">
+
+<!-- ===================== MENU ===================== -->
+<div id="menu" class="panel">
+  <div class="center">
+    <h1>🐱 MATTEW VIBES</h1>
+    <div class="hero-img"><span>🐈</span><span>🔪</span><span>🦆</span></div>
+  </div>
+  <div class="center" style="margin-top:6px">
+    <span class="loretip" tabindex="0">📜 Передісторія (наведи)
+      <span class="tip">
+        <p style="margin:0 0 .6em">7 років тому корпорація <b>«Гніздишко»</b> під виглядом притулку ставила досліди над тваринами.
+        Тварини еволюціонували — виросли руки й ноги, вони порозумнішали і втекли. Тепер вони прийшли по помсту.</p>
+        <p style="margin:0">Ти — <b>Іван Готівка</b> 🐱. Твій бос — <b>Чайка</b> 🦆, що вижила після безлічі експериментів.
+        У тебе є ніж і кристал телепорту. Місія 1: пробитися крізь <b>Кролика</b>, <b>Сову</b> і боса — <b>Гігантську Крису</b>.</p>
+      </span>
+    </span>
+  </div>
+  <div class="center" style="margin-top:14px">
+    <button class="btn gold" onclick="startMission()">▶ Грати (Місія 1)</button>
+    <button class="btn green" onclick="openPvp()">⚔️ PvP (1 пристрій)</button>
+    <button class="btn green" onclick="openOnline()">🌐 PvP онлайн</button>
+    <button class="btn" onclick="toggleHelp(true)">📜 Як грати</button>
+  </div>
+</div>
+
+<!-- ===================== PvP ONLINE LOBBY ===================== -->
+<div id="pvpOnline" class="panel">
+  <div class="center">
+    <h1>🌐 PvP ОНЛАЙН</h1>
+  </div>
+  <div id="onlineHome" class="center">
+    <p class="muted">Грай із другом через інтернет на різних пристроях.</p>
+    <div style="margin-top:10px">
+      <button class="btn gold" onclick="onlineCreate()">🆕 Створити гру</button>
+      <button class="btn green" onclick="onlineShowJoin()">🔗 Доєднатись за кодом</button>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn" onclick="backToMenuFromOnline()">↩️ Назад у меню</button>
+    </div>
+  </div>
+  <div id="onlineHost" class="center" style="display:none">
+    <p>Передай цей код другові:</p>
+    <div id="onlineCode" class="bigcode">— — —</div>
+    <p class="muted" id="onlineHostStatus">Підключення до сервера…</p>
+    <button class="btn" onclick="backToMenuFromOnline()">↩️ Скасувати</button>
+  </div>
+  <div id="onlineJoin" class="center" style="display:none">
+    <p>Введи код суперника (3 цифри):</p>
+    <input id="onlineCodeInput" class="codeinput" inputmode="numeric" maxlength="3" placeholder="000">
+    <div style="margin-top:10px">
+      <button class="btn gold" onclick="onlineConnect()">🔗 Підключитись</button>
+      <button class="btn" onclick="backToMenuFromOnline()">↩️ Назад</button>
+    </div>
+    <p class="muted" id="onlineJoinStatus"></p>
+  </div>
+</div>
+
+<!-- ===================== PvP CHARACTER SELECT ===================== -->
+<div id="pvpSelect" class="panel">
+  <div class="center">
+    <h1>⚔️ PvP — ВИБІР ПЕРСОНАЖІВ</h1>
+    <p class="muted" id="pvpSelectSub">Оберіть бійців і — у бій!</p>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <div style="flex:1 1 240px;min-width:240px">
+      <h2 id="pvpP0title">🔵 Гравець 1</h2>
+      <div class="charpick" id="pick0"></div>
+    </div>
+    <div style="flex:1 1 240px;min-width:240px">
+      <h2 id="pvpP1title">🔴 Гравець 2</h2>
+      <div class="charpick" id="pick1"></div>
+    </div>
+  </div>
+  <div class="center" style="margin-top:16px">
+    <button class="btn gold" id="pvpStartBtn" onclick="pvpStartBtnClick()" disabled>▶ Почати бій</button>
+    <button class="btn" onclick="backToMenuFromPvp()">↩️ Назад у меню</button>
+  </div>
+</div>
+
+<!-- ===================== BATTLE ===================== -->
+<div id="battle" class="panel">
+  <div class="topbar">
+    <div class="badge" id="missionBadge">Місія 1</div>
+    <div class="badge">Раунд: <span id="roundN">1</span> · <span id="turnLbl">Хід Івана Готівки</span></div>
+    <div class="badge">Дії: <span class="pips" id="pips"></span></div>
+    <button class="btn menubtn" onclick="returnToMenu()">🏠 Меню</button>
+  </div>
+
+  <div class="vsbar">
+    <div class="fighter">
+      <div class="avatar"><span id="catFace">🐈</span></div>
+      <div class="finfo">
+        <div class="fname"><b id="catName">Іван Готівка</b></div>
+        <div class="hpbar"><div class="hpfill" id="catHp"></div></div>
+        <div class="hptext" id="catHpT">90 / 90</div>
+        <div class="fx" id="catFx"></div>
+      </div>
+    </div>
+    <div class="vs">⚔️</div>
+    <div class="fighter right">
+      <div class="finfo">
+        <div class="fname"><b id="enName">Кролик</b></div>
+        <div class="hpbar"><div class="hpfill" id="enHp"></div></div>
+        <div class="hptext" id="enHpT">100 / 100</div>
+        <div class="fx" id="enFx"></div>
+      </div>
+      <div class="avatar"><span id="enFace">🐰</span></div>
+    </div>
+  </div>
+
+  <div class="arena">
+    <div class="boardwrap">
+      <div id="board">
+        <div id="tiles"></div>
+        <div id="units"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hint" id="hint">Обери дію.</div>
+
+  <div class="controls center" id="controls"></div>
+
+  <div id="log"></div>
+</div>
+
+</div>
+
+<!-- ===================== OVERLAYS ===================== -->
+<div class="overlay" id="ovHelp">
+  <div class="panel modal" style="text-align:left;max-width:560px;max-height:86vh;overflow:auto">
+    <h2>📜 Як грати</h2>
+    <ul style="line-height:1.6;font-size:14px">
+      <li>Поле <b>10×5</b>. За раунд у тебе <b>3 дії</b> (🌭 Сосиска дає 4-ту).</li>
+      <li>Одна дія = <b>рух</b> (до 3 клітин), <b>телепорт</b> або <b>будь-яка атака</b>.</li>
+      <li><b>🩸 Кровопролиття</b>: −4 HP на початку ходу. Знімається 🩹 перев'язкою (2 дії).</li>
+      <li><b>💫 Головокружіння</b>: не можна кастувати заклинання.</li>
+      <li><b>😱 Переляк</b>: не можна рухатися.</li>
+      <li><b>🔪 Удар ножем</b> (14-20, радіус 1) · <b>🎯 Кидок ножа</b> (радіус 7, урон росте з дистанцією) ·
+          <b>🐾 Котячі порізи</b> (до 31-43, радіус 3, тисни ПРОБІЛ, 2 дії) · <b>👁️ Гострий погляд</b> (переляк, дист. 4) ·
+          <b>✨ Телепорт</b> (у точку, кулдаун 2 раунди, дає собі головокружіння).</li>
+      <li><b>📖 Книга</b> — 5 заклинань, кожне 1 раз за бій.</li>
+    </ul>
+    <div class="center"><button class="btn gold" onclick="toggleHelp(false)">Зрозуміло</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovTap">
+  <div class="panel modal">
+    <h2 id="tapTitle">Тапай!</h2>
+    <div class="timefill" id="tapTime"></div>
+    <div class="meter"><div class="meterfill" id="tapMeter"></div></div>
+    <button class="btn red tapbtn" id="tapBtn">👆 TAP</button>
+    <div class="muted" id="tapSub" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovSpell">
+  <div class="panel modal" style="max-width:520px">
+    <h2>📖 Книга заклинань Івана Готівки</h2>
+    <div class="spellgrid" id="spellGrid"></div>
+    <div class="center" style="margin-top:10px"><button class="btn" onclick="closeSpells()">Закрити</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovMsg">
+  <div class="panel modal">
+    <div id="msgIcon" style="font-size:56px"></div>
+    <h2 id="msgTitle"></h2>
+    <p id="msgBody" class="muted"></p>
+    <button class="btn gold" id="msgBtn"></button>
+    <button class="btn" id="msgBtn2" style="display:none"></button>
+  </div>
+</div>
+
+<div class="overlay" id="ovCoin">
+  <div class="panel modal">
+    <h2>🪙 ЖЕРЕБ — ХТО ПЕРШИЙ?</h2>
+    <div class="coinStage">
+      <div class="coin idle" id="coin">
+        <div class="coinFace heads"><span>🐱</span><b>ІВАН</b></div>
+        <div class="coinFace tails"><span>👱</span><b>ТРАМП</b></div>
+      </div>
+    </div>
+    <div class="coinHint" id="coinHint">Тапни монетку, щоб підкинути!</div>
+    <div class="muted coinTap" id="coinTap">👆 тап по монетці</div>
+    <button class="btn gold" id="coinGo" style="display:none">Продовжити</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+"use strict";
+/* ============================================================
+   ГНІЗДИШКО: ПОМСТА — покрокова тактика (один файл)
+   ============================================================ */
+const COLS=10, ROWS=5;
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const cheb = (a,b)=>Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y));
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+
+/* ---------- Enemy definitions ---------- */
+const ENEMIES = [
+  {
+    key:'rabbit', name:'Кролик', emoji:'🐇', hp:100, move:2,
+    abilities:[
+      {id:'carrot', name:'Морквяна засада', dmg:15, range:6, proj:'🥕', bleed:false},
+      {id:'foot',   name:'Кроляча лапка',   dmg:15, range:1, proj:'🦶', bleed:false},
+      {id:'quake',  name:'Сейсмострибок',    dmg:20, range:6, special:'quake'},
+    ]
+  },
+  {
+    key:'owl', name:'Сова', emoji:'🦉', hp:70, move:3,
+    abilities:[
+      {id:'fall',    name:'Падіння з пітьми', dmg:45, range:3, special:'tap'},
+      {id:'feather', name:'Кидок пір\'я',     dmg:7,  range:5, proj:'🪶', bleed:true},
+    ]
+  },
+  {
+    key:'rat', name:'Гігантська Криса', emoji:'🐀', hp:175, move:2, boss:true,
+    abilities:[
+      {id:'cheese', name:'Кидок сиру',  dmg:20, range:6, proj:'🧀', bleed:false},
+      {id:'bite',   name:'Кривавий укус', dmg:25, range:1, proj:'🦷', bleed:true},
+      {id:'trash',  name:'Смітник (+50% урону)', dmg:0, range:0, special:'buff'},
+    ]
+  },
+];
+
+/* ---------- Game state ---------- */
+let G = null;
+function freshCat(){
+  return {who:'cat', name:'Іван Готівка', emoji:'🐈', x:0, y:2, hp:90, maxHp:90,
+    hasKnife:true, move:3,
+    fx:{bleed:false, fear:0, dizzy:0}, buff:{mouse:0}, el:null};
+}
+function makeEnemy(def){
+  return {who:'en', name:def.name, emoji:def.emoji, x:9, y:2, hp:def.hp, maxHp:def.hp,
+    move:def.move, def, boss:!!def.boss,
+    fx:{bleed:false, fear:0, dizzy:0}, buff:{might:0}, el:null};
+}
+
+function startMission(){
+  abort=false;
+  $('menu').style.display='none';
+  $('battle').style.display='block';
+  G = {
+    mode:'campaign',
+    battleIndex:0,
+    cat:freshCat(),
+    enemy:null,
+    anchors:[],          // teleport points (persist across battles)
+    teleCd:0,
+    phase:'setup',       // 'setup' | 'play'
+    turn:'cat',
+    round:1,
+    actions:3, maxActions:3,
+    selected:null,
+    knife:null,          // {x,y} when on ground
+    spells:{fish:false, mouse:false, sausage:false, tail:false, meow:false},
+    enemyPenalty:false,  // tail -> enemy loses 1 action next turn
+    busy:false,
+  };
+  buildBoard();
+  loadBattle();
+}
+
+function loadBattle(){
+  const def = ENEMIES[G.battleIndex];
+  G.enemy = makeEnemy(def);
+  G.cat.x=0; G.cat.y=2;
+  G.cat.fx={bleed:false,fear:0,dizzy:0};
+  G.cat.buff={mouse:0};
+  G.cat.hp = G.cat.maxHp;             // full heal between fights
+  G.spells={fish:false,mouse:false,sausage:false,tail:false,meow:false};
+  G.knife=null; G.cat.hasKnife=true;
+  G.teleCd=0; G.enemyPenalty=false;
+  G.turn='cat'; G.round=1; G.actions=3; G.maxActions=3; G.selected=null;
+  G.busy=false; G.noIncNextCat=false;          // ВАЖЛИВО: знімаємо busy між боями, інакше кнопки заблоковані
+  $('log').innerHTML='';                         // чистий лог на кожен бій
+  $('missionBadge').textContent = 'Місія 1 · бій '+(G.battleIndex+1)+'/3'+(def.boss?' · БОС':'');
+  $('catName').textContent = 'Іван Готівка';
+  $('enName').textContent = def.name;
+  $('catFace').textContent=''; $('catFace').appendChild(catCanvas(30,'idle',false)); // Кіт-герой дивиться вправо
+  setPixel($('enFace'),  def.emoji,   38, 22, false);                                 // тварина дивиться вліво
+  placeUnits();
+  if(G.anchors.length<3){
+    G.phase='setup';
+    setHint('Кристал телепорту: обери <b>3 точки</b> на полі (клікай по зелених клітинах).');
+    log('<b>Навчання:</b> спершу постав кристали телепорту.');
+    log('Налаштування: обери 3 точки телепорту.');
+    render();
+  } else {
+    G.phase='play';
+    log('<b>Бій з '+def.name+' починається!</b>');
+    render();
+    coinToss();                                  // жереб: хто ходить першим
+  }
+}
+
+/* ---------- Board / units rendering ---------- */
+function buildBoard(){
+  const tiles = $('tiles'); tiles.innerHTML='';
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const c=document.createElement('div');
+    c.className='cell'+(((x+y)%2)?' alt':'');
+    c.dataset.x=x; c.dataset.y=y;
+    c.addEventListener('click',()=>onCell(x,y));
+    tiles.appendChild(c);
+  }
+}
+function cellEl(x,y){ return $('tiles').children[y*COLS+x]; }
+/* ---------- піксель-арт із емодзі (Heroes-3-style спрайт) ---------- */
+// Малюємо емодзі в малій роздільності й показуємо збільшено без згладжування.
+function pixelEmoji(emoji, displayPx, res, faceLeft){
+  res = res||20;
+  const cv=document.createElement('canvas');
+  cv.width=res; cv.height=res;
+  const ctx=cv.getContext('2d');
+  if(faceLeft){ ctx.translate(res,0); ctx.scale(-1,1); }   // дзеркало
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font=Math.round(res*0.88)+'px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+  ctx.fillText(emoji, res/2, res*0.55);
+  cv.className='px';
+  cv.style.width=displayPx+'px'; cv.style.height=displayPx+'px';
+  return cv;
+}
+function setPixel(el, emoji, displayPx, res, faceLeft){
+  if(!el) return;
+  el.textContent=''; el.appendChild(pixelEmoji(emoji, displayPx, res, faceLeft));
+}
+
+/* ---------- Кіт-герой: кастомний спрайт (джинси + футболка AC/DC) ---------- */
+const CAT_PAL={'O':'#e8923c','o':'#bf6f1e','P':'#f4a9c2','E':'#37c46a',
+  'K':'#15151a','W':'#eef0f2','B':'#3f6fa6','b':'#2c5078'};
+const CAT_TOP=[
+  "     OO   OO    ","    OPO  OPO    ","    OOOOOOOO    ","    OOEOOEOO    ",
+  "    OOOOPOOO    ","     OOOOOO     ","      OOOO      ","  OOKKKKKKKKOO  ",
+  "  OOKKKKWKKKOO  ","  OOKKKWKKKKOO  ","  OoKKKKWKKKoO  ","   KKKKWKKKKK   ",
+  "   KKKKKKKKKK   "];
+const CAT_LEGS={
+  idle:["    BBBBBBBB    ","    BBB  BBB    ","    BBB  BBB    ","    BBb  bBB    ",
+        "    bbB  Bbb    ","   KKKK  KKKK   ","   KKKK  KKKK   "],
+  step:["    BBBBBBBB    ","   BBB    BBB   ","   BBB    BBB   ","   BBb    bBB   ",
+        "   bbB    Bbb   ","  KKKK    KKKK  ","  KKKK    KKKK  "]};
+function catCanvas(displayW, frame, faceLeft){
+  const COLS=16, RN=20;
+  const cv=document.createElement('canvas'); cv.width=COLS; cv.height=RN;
+  const ctx=cv.getContext('2d');
+  if(faceLeft){ ctx.translate(COLS,0); ctx.scale(-1,1); }
+  const rows=CAT_TOP.concat(CAT_LEGS[frame]||CAT_LEGS.idle);
+  for(let y=0;y<rows.length;y++){ const r=rows[y];
+    for(let x=0;x<r.length;x++){ const c=CAT_PAL[r[x]]; if(c){ ctx.fillStyle=c; ctx.fillRect(x,y,1,1); } } }
+  cv.className='px'; cv.style.width=displayW+'px'; cv.style.height=Math.round(displayW*RN/COLS)+'px';
+  return cv;
+}
+function isHeroCat(u){ return !!u && u.who==='cat'; }
+function buildSprite(u, frame){
+  const other = (u===G.cat) ? G.enemy : G.cat;
+  const right = !!other && other.x > u.x;
+  u._right = right;
+  if(isHeroCat(u)) return catCanvas(33, frame||'idle', !right);
+  return pixelEmoji(u.emoji, 38, 20, right);
+}
+function refreshSprite(u, frame){
+  if(!u || !u.el) return;
+  const inner=u.el.querySelector('.uinner'); if(!inner) return;
+  inner.innerHTML=''; inner.appendChild(buildSprite(u, frame));
+}
+const walkTimers=new Map();
+function startWalk(u){
+  const inner=u && u.el && u.el.querySelector('.uinner'); if(!inner) return;
+  inner.classList.add('walking');
+  if(isHeroCat(u)){ let on=false; refreshSprite(u,'step');
+    const t=setInterval(()=>{ on=!on; refreshSprite(u, on?'idle':'step'); }, 120);
+    walkTimers.set(u,t); }
+}
+function stopWalk(u){
+  const inner=u && u.el && u.el.querySelector('.uinner'); if(inner) inner.classList.remove('walking');
+  const t=walkTimers.get(u); if(t){ clearInterval(t); walkTimers.delete(u); }
+  if(isHeroCat(u)) refreshSprite(u,'idle');
+}
+function placeUnits(){
+  const layer=$('units'); layer.innerHTML='';
+  for(const u of [G.cat,G.enemy]){
+    const el=document.createElement('div'); el.className='unit '+((u.who==='cat'||u.who==='p0')?'u-ally':'u-foe');
+    const sh=document.createElement('div'); sh.className='shadow';
+    const inner=document.createElement('div'); inner.className='uinner';
+    el.appendChild(sh); el.appendChild(inner);
+    layer.appendChild(el); u.el=el;
+    refreshSprite(u);                                 // фігурка з правильним поворотом
+  }
+  updateUnitPos();
+}
+function cellPx(){ const s=getComputedStyle(document.documentElement).getPropertyValue('--cell'); return parseInt(s); }
+function updateUnitPos(){
+  const c=cellPx();
+  for(const u of [G.cat,G.enemy]){
+    if(!u.el) continue;
+    u.el.style.transform='translate('+(u.x*c)+'px,'+(u.y*c)+'px)';
+  }
+}
+
+/* ---------- HUD render ---------- */
+function fxIcons(u){
+  let s='';
+  if(u.fx.bleed) s+='<span title="Кровопролиття">🩸</span>';
+  if(u.fx.dizzy>0) s+='<span title="Головокружіння">💫</span>';
+  if(u.fx.fear>0) s+='<span title="Переляк">😱</span>';
+  if(u.buff && u.buff.mouse>0) s+='<span title="Мишка +30%">🐭'+u.buff.mouse+'</span>';
+  if(u.buff && u.buff.might>0) s+='<span title="Смітник +50%">🗑️'+u.buff.might+'</span>';
+  return s;
+}
+function render(){
+  if(!G) return;
+  const cat=G.cat, en=G.enemy;
+  $('catHp').style.width=(100*clamp(cat.hp,0,cat.maxHp)/cat.maxHp)+'%';
+  $('catHpT').textContent=Math.max(0,Math.round(cat.hp))+' / '+cat.maxHp;
+  $('enHp').style.width=(100*clamp(en.hp,0,en.maxHp)/en.maxHp)+'%';
+  $('enHpT').textContent=Math.max(0,Math.round(en.hp))+' / '+en.maxHp;
+  $('catFx').innerHTML=fxIcons(cat);
+  $('enFx').innerHTML=fxIcons(en);
+  $('roundN').textContent=G.round;
+  $('turnLbl').textContent = G.mode==='pvp' ? (NET.online ? (G.active===NET.myIdx?'Твій хід':'Хід суперника') : ('Гравець '+(G.active+1))) : (G.turn==='cat' ? 'Хід Івана Готівки' : 'Хід ворога');
+  // pips
+  let pips=''; for(let i=0;i<G.maxActions;i++) pips+='<span class="pip'+(i<G.actions?' on':'')+'"></span>';
+  $('pips').innerHTML=pips;
+  updateUnitPos();
+  // автоповорот «обличчям один до одного», коли позиції змінились
+  [G.cat,G.enemy].forEach(u=>{
+    if(!u||!u.el) return;
+    const other=(u===G.cat)?G.enemy:G.cat;
+    const right=!!other && other.x>u.x;
+    if(u._right!==right && !walkTimers.has(u)) refreshSprite(u);
+  });
+  renderControls();
+  renderHighlights();
+  // anchors + knife markers
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const c=cellEl(x,y);
+    c.querySelectorAll('.anchor,.knife').forEach(n=>n.remove());
+  }
+  G.anchors.forEach(a=>{ const c=cellEl(a.x,a.y); if(c){const m=document.createElement('div');m.className='anchor';m.textContent='✨';c.appendChild(m);} });
+  if(G.knife){ const c=cellEl(G.knife.x,G.knife.y); if(c){const m=document.createElement('div');m.className='knife';m.textContent='🔪';c.appendChild(m);} }
+}
+
+/* ---------- Action buttons ---------- */
+function renderControls(){
+  if(G.mode==='pvp'){ renderPvpControls(); return; }
+  const cat=G.cat, en=G.enemy, box=$('controls');
+  if(G.phase==='setup'){
+    box.innerHTML = G.anchors.length>=3
+      ? '<button class="btn gold" onclick="finishSetup()">⚔️ Почати бій</button>'
+      : '<span class="muted">Поставлено точок: '+G.anchors.length+'/3</span> '+
+        (G.anchors.length? '<button class="btn" onclick="resetAnchors()">Скинути</button>':'');
+    return;
+  }
+  const playerTurn = G.turn==='cat' && !G.busy;
+  const A = []; // {label, cost, on, action}
+  const can = c => playerTurn && G.actions>=c;
+  A.push(b('🏃 Рух','move', can(1) && cat.fx.fear===0, 1, cat.fx.fear>0?'😱 Переляк: не можна рухатися':'Перемістись до 3 клітин'));
+  A.push(b('🔪 Удар','knifeStrike', can(1)&&cat.hasKnife, 1, !cat.hasKnife?'Немає ножа':'Урон 14-20, радіус 1, кровопролиття'));
+  A.push(b('🎯 Кидок','knifeThrow', can(1)&&cat.hasKnife, 1, !cat.hasKnife?'Немає ножа':'Радіус 7, урон росте з дистанцією'));
+  A.push(b('🐾 Порізи','scratch', can(2), 2, 'Урон до 31-43, радіус 3 — тисни ПРОБІЛ! (2 дії)'));
+  A.push(b('👁️ Погляд','gaze', can(1), 1, 'Переляк, дистанція 4'));
+  A.push(b('✨ Телепорт','teleport', can(1)&&G.teleCd<=0&&G.anchors.length>0, 1, G.teleCd>0?('Кулдаун: '+G.teleCd+' р.'):'Стрибок у точку + головокружіння'));
+  if(G.knife) A.push(b('↩️ Підняти ніж','recall', can(1), 1, 'Повернути ніж у руку'));
+  if(cat.fx.bleed) A.push(b('🩹 Перев\'язка','bandage', can(2), 2, 'Зняти кровопролиття (2 дії)'));
+  A.push(b('📖 Книга','book', playerTurn && cat.fx.dizzy===0, 0, cat.fx.dizzy>0?'💫 Головокружіння':'Заклинання (1 раз/бій)'));
+  let html='';
+  for(const a of A){
+    html+='<button class="btn actbtn'+(G.selected===a.action?' gold':'')+'" '+(a.on?'':'disabled')+
+      ' title="'+a.title+'" onclick="chooseAction(\''+a.action+'\')">'+a.label+
+      (a.cost>0?'<span class="cost">'+a.cost+'</span>':'')+'</button>';
+  }
+  html+='<button class="btn red actbtn" '+(playerTurn?'':'disabled')+' onclick="pvpEndTurnBtn()">⏭️ Кінець ходу</button>';
+  box.innerHTML=html;
+  function b(label,action,on,cost,title){return {label,action,on,cost,title};}
+}
+
+/* ---------- Highlights ---------- */
+function clearHL(){ document.querySelectorAll('.cell').forEach(c=>c.classList.remove('move','tgt','place','anchorpick')); }
+function renderHighlights(){
+  clearHL();
+  if(G.mode==='pvp'){ renderPvpHighlights(); return; }
+  if(G.phase==='setup'){
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+      if((x===G.cat.x&&y===G.cat.y)||(x===G.enemy.x&&y===G.enemy.y)) continue;
+      if(G.anchors.some(a=>a.x===x&&a.y===y)) continue;
+      cellEl(x,y).classList.add('anchorpick');
+    }
+    return;
+  }
+  const s=G.selected; if(!s) return;
+  const cat=G.cat, en=G.enemy;
+  if(s==='move'){
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+      if(x===cat.x&&y===cat.y) continue;
+      if(x===en.x&&y===en.y) continue;
+      if(cheb({x,y},cat)<=cat.move) cellEl(x,y).classList.add('move');
+    }
+  } else if(s==='meow'){
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+      if(x===cat.x&&y===cat.y) continue;
+      if(x===en.x&&y===en.y) continue;
+      cellEl(x,y).classList.add('place');
+    }
+  } else if(s==='teleport'){
+    G.anchors.forEach(a=>{ if(!(a.x===en.x&&a.y===en.y)) cellEl(a.x,a.y).classList.add('tgt'); });
+  } else {
+    const ranges={knifeStrike:1,knifeThrow:7,scratch:3,gaze:4};
+    const r=ranges[s];
+    if(r!=null && cheb(cat,en)<=r) cellEl(en.x,en.y).classList.add('tgt');
+  }
+}
+
+/* ---------- Input ---------- */
+function setHint(h){ $('hint').innerHTML=h; }
+function chooseAction(a){
+  if(G.busy||G.turn!=='cat') return;
+  if(a==='book'){ openSpells(); return; }
+  // immediate (self) actions
+  if(a==='bandage'){ doBandage(); return; }
+  if(a==='recall'){ doRecall(); return; }
+  G.selected = (G.selected===a)?null:a;
+  // hint per action
+  const hints={
+    move:'Клікни синю клітину, щоб перейти.',
+    knifeStrike:'Клікни ворога (радіус 1).',
+    knifeThrow:'Клікни ворога (радіус 7).',
+    scratch:'Клікни ворога (радіус 3), потім тисни ПРОБІЛ!',
+    gaze:'Клікни ворога (дистанція 4) — переляк.',
+    teleport:'Клікни ✨ точку телепорту.',
+  };
+  setHint(G.selected? (hints[a]||'Обери ціль.') : 'Обери дію.');
+  render();
+}
+
+function onCell(x,y){
+  if(G.busy) return;
+  if(G.mode==='pvp'){ onCellPvp(x,y); return; }
+  if(G.phase==='setup'){ addAnchor(x,y); return; }
+  if(G.turn!=='cat'||!G.selected) return;
+  const cat=G.cat, en=G.enemy;
+  const s=G.selected;
+  const onEnemy = (x===en.x&&y===en.y);
+  if(s==='move'){
+    if(onEnemy) return;
+    if(cheb({x,y},cat)<=cat.move && !(x===cat.x&&y===cat.y)) doMove(x,y);
+  } else if(s==='knifeStrike'){ if(onEnemy&&cheb(cat,en)<=1) doKnifeStrike(); }
+  else if(s==='knifeThrow'){ if(onEnemy&&cheb(cat,en)<=7) doKnifeThrow(); }
+  else if(s==='scratch'){ if(onEnemy&&cheb(cat,en)<=3) doScratch(); }
+  else if(s==='gaze'){ if(onEnemy&&cheb(cat,en)<=4) doGaze(); }
+  else if(s==='teleport'){ if(G.anchors.some(a=>a.x===x&&a.y===y) && !onEnemy) doTeleport(x,y); }
+  else if(s==='meow'){ if(!onEnemy&&!(x===cat.x&&y===cat.y)) doMeow(x,y); }
+}
+
+/* ---------- Setup anchors ---------- */
+function addAnchor(x,y){
+  if(G.anchors.length>=3) return;
+  if((x===G.cat.x&&y===G.cat.y)||(x===G.enemy.x&&y===G.enemy.y)) return;
+  if(G.anchors.some(a=>a.x===x&&a.y===y)) return;
+  G.anchors.push({x,y});
+  log('Кристал телепорту встановлено ('+G.anchors.length+'/3).');
+  render();
+}
+function resetAnchors(){ G.anchors=[]; render(); }
+function finishSetup(){
+  G.phase='play'; G.selected=null;
+  log('<b>Бій з '+G.enemy.name+' починається!</b>');
+  if(G.battleIndex===0) tutorial();   // підказки навчання (ставлять hint)
+  render();
+  coinToss();                          // жереб: хто ходить першим
+}
+
+/* ============================================================
+   CAT ACTIONS
+   ============================================================ */
+function spend(n){
+  G.actions-=n;
+  G.selected=null;
+  render();
+  // не плануємо кінець ходу під час асинхронної дії (напр. тапи) — це зробить afterAction
+  if(G.actions<=0 && !G.busy){ setTimeout(endTurn,420); }
+}
+function dmgMult(u){ if(u.who==='cat') return u.buff.mouse>0?1.3:1; return u.buff.might>0?1.5:1; }
+/* вилка урону: повертає випадкове число біля base (±~15%, мінімум ±1). Напр. 15 → 13..17 */
+function rollDmg(base){
+  if(base<=0) return 0;
+  const spread=Math.max(1, Math.round(base*0.15));
+  return base - spread + Math.floor(Math.random()*(2*spread+1));
+}
+
+async function doMove(x,y){
+  G.busy=true; clearHL();
+  startWalk(G.cat);
+  G.cat.x=x; G.cat.y=y; updateUnitPos();
+  await sleep(360);
+  stopWalk(G.cat);
+  // auto pickup knife if adjacent
+  if(G.knife && cheb(G.cat,G.knife)<=1){
+    G.cat.hasKnife=true; G.knife=null; log('Іван Готівка підібрав ніж.'); pop(G.cat,'🔪','#fff');
+  }
+  G.busy=false; spend(1);
+}
+function doKnifeStrike(){
+  const en=G.enemy;
+  punch(G.cat); shake(en); clash(G.cat,en);
+  const dmg=Math.round(rollDmg(17)*dmgMult(G.cat));
+  hurt(en,dmg,true);
+  log('Іван Готівка б\'є ножем — <b>'+dmg+'</b> урону + 🩸');
+  spend(1);
+}
+function doKnifeThrow(){
+  const en=G.enemy, d=cheb(G.cat,en);
+  punch(G.cat); clash(G.cat,en);
+  projectile(G.cat,en,'🔪');
+  const base=clamp(Math.round(10*d/7),2,10);
+  const dmg=Math.round(rollDmg(base)*dmgMult(G.cat));
+  setTimeout(()=>{ shake(en); hurt(en,dmg,true); },330);
+  G.cat.hasKnife=false; G.knife={x:en.x,y:en.y};
+  log('Іван Готівка кидає ніж (дист. '+d+') — <b>'+dmg+'</b> урону + 🩸. Ніж лежить на полі.');
+  spend(1);
+}
+function doScratch(){
+  const en=G.enemy;
+  G.busy=true;     // блокуємо керування ДО списання дії, щоб spend не запланував endTurn передчасно
+  spend(2);        // дія списується незалежно від результату тапів (2 дії)
+  tapChallenge({title:'🐾 Котячі порізи — тисни ПРОБІЛ!', duration:2500, goal:10, sub:'Натискай ПРОБІЛ якнайшвидше!'})
+    .then(res=>{
+      const frac=clamp(res.taps/10,0,1);
+      const dmg=Math.round(rollDmg(37)*frac*dmgMult(G.cat));
+      punch(G.cat); shake(en); if(dmg>0) clash(G.cat,en);
+      if(dmg>0){ hurt(en,dmg,true); log('Котячі порізи — <b>'+dmg+'</b> урону + 🩸 ('+res.taps+' натискань)'); }
+      else log('Котячі порізи — промах, 0 урону.');
+      // ВАЖЛИВО: знімаємо busy і перемальовуємо контролі (інакше кнопки лишаються заблокованими)
+      if(G.enemy.hp>0){ G.busy=false; afterAction(); }
+    });
+}
+function doGaze(){
+  const en=G.enemy;
+  punch(G.cat);
+  en.fx.fear=1;
+  pop(en,'😱','#ffd27a');
+  log('Гострий погляд — ворог у <b>переляку</b> (не зможе рухатись).');
+  spend(1);
+}
+async function doTeleport(x,y){
+  G.busy=true; clearHL();
+  pop(G.cat,'✨','#9fd0ff');
+  await sleep(150);
+  G.cat.x=x; G.cat.y=y; updateUnitPos();
+  G.teleCd=2;
+  G.cat.fx.dizzy=Math.max(G.cat.fx.dizzy,1);
+  log('Телепорт! Іван Готівка стрибнув у точку (+💫 головокружіння, кулдаун 2р).');
+  await sleep(360);
+  if(G.knife && cheb(G.cat,G.knife)<=1){ G.cat.hasKnife=true; G.knife=null; log('Іван Готівка підібрав ніж.'); }
+  G.busy=false; spend(1);
+}
+function doRecall(){
+  if(!G.knife) return;
+  G.cat.hasKnife=true; G.knife=null;
+  pop(G.cat,'🔪','#fff');
+  log('Іван Готівка телепортував ніж назад у руку.');
+  spend(1);
+}
+function doBandage(){
+  G.cat.fx.bleed=false;
+  pop(G.cat,'🩹','#76c95b');
+  log('Іван Готівка перев\'язав рани — 🩸 знято.');
+  spend(2);
+}
+
+/* ---------- Spells ---------- */
+function openSpells(){
+  const sp=G.spells, g=$('spellGrid');
+  const list=[
+    ['fish','🐟 Рибка','+25 HP'],
+    ['mouse','🐭 Мишка','+30% урону на 2 раунди'],
+    ['sausage','🌭 Сосиска','4 дії замість 3 (цей раунд)'],
+    ['tail','🐈 Хвіст','ворог втрачає 1 дію'],
+    ['meow','🐱 М\'яв','телепорт ворога + 💫'],
+  ];
+  g.innerHTML=list.map(([k,t,d])=>
+    '<div class="spell'+(sp[k]?' used':'')+'" onclick="'+(sp[k]?'':'castSpell(\''+k+'\')')+'"><b>'+t+'</b><small>'+d+'</small></div>'
+  ).join('');
+  $('ovSpell').classList.add('show');
+}
+function closeSpells(){ $('ovSpell').classList.remove('show'); }
+function castSpell(k){
+  if(G.spells[k]||G.cat.fx.dizzy>0) return;
+  G.spells[k]=true; closeSpells();
+  const cat=G.cat, en=G.enemy;
+  if(k==='fish'){ cat.hp=Math.min(cat.maxHp,cat.hp+25); pop(cat,'+25','#76c95b'); log('🐟 Рибка: +25 HP.'); spend(1); }
+  else if(k==='mouse'){ cat.buff.mouse=2; pop(cat,'🐭','#ffd27a'); log('🐭 Мишка: +30% урону на 2 раунди.'); spend(1); }
+  else if(k==='sausage'){ G.maxActions+=1; G.actions+=1; pop(cat,'🌭','#ffd27a'); log('🌭 Сосиска: +1 дія цього раунду.'); render(); }
+  else if(k==='tail'){ G.enemyPenalty=true; pop(en,'−1','#ff9b2e'); log('🐈 Хвіст: ворог втратить 1 дію.'); spend(1); }
+  else if(k==='meow'){ G.selected='meow'; setHint('М\'яв: клікни клітину, куди закинути ворога.'); render(); }
+}
+function doMeow(x,y){
+  const en=G.enemy;
+  pop(en,'🐱','#c8a6ff');
+  en.x=x; en.y=y; updateUnitPos();
+  en.fx.dizzy=Math.max(en.fx.dizzy,1);
+  log('🐱 М\'яв: ворога телепортовано + 💫 головокружіння.');
+  spend(1);
+}
+
+/* ---------- folk curses (autentyc'ni narodni laiky) ---------- */
+const CURSES = {
+  // Кіт б'є — бойові вигуки в бік ворога
+  catAttack:[
+    'НА ТОБІ, ВРАЖЕ!','ДІДЬКО ТОБІ В РЕБРА!','ЩОБ ТЕБЕ КАЧКА КОПНУЛА!',
+    'ОТ ТОБІ ГОСТИНЕЦЬ!','ПЕК ТОБІ, ОСИНА!','ГЕТЬ ДО ДІДЬКА!',
+    'МАЄШ, ХОЛЕРО!','ТРЯСЦЯ ТВОЇЙ МАТЕРІ!','А БОДАЙ ТЕБЕ ГРІМ ПОБИВ!',
+    'НАЙ ТЕБЕ ШЛЯК ТРАФИТЬ!','А ЩОБ ТИ СКИС!',
+  ],
+  // Кіт отримує урон — вигуки болю/злості
+  catHurt:[
+    'ДІДЬКО!','А БОДАЙ ТЕБЕ!','ТРЯСЦЯ!','ОЙ, ХОЛЕРА!','ЦУР ТОБІ, ПЕК!',
+    'БІСОВА ДУША!','ОЙ ЛИШЕНЬКО!','ГРІМ БИ ТЕБЕ ПОБИВ!','А ДОБРА Б ТОБІ НЕ БУЛО!',
+  ],
+  // Ворог б'є кота
+  enAttack:[
+    'ОТ ТОБІ, КОТЕ!','МАЄШ!','ДЗУСЬКИ!','НА, ДІСТАВАЙ!','ГИ-ГИ-ГИ!',
+    'ЩОБ ТИ ЗДОХ!','ПЕК ТОБІ!','А БОДАЙ ТИ СКИС!',
+  ],
+  // Ворог отримує урон
+  enHurt:[
+    'ОЙ ЛИШЕНЬКО!','ОХ, ХОЛЕРА!','ДІДЬКО!','РЯТУЙТЕ!','ОЙ-ОЙ-ОЙ!',
+    'А БОДАЙ ТОБІ!','ЩОБ ТИ СКИС!','ПЕК!',
+  ],
+};
+// Лише ОДНА репліка одночасно: поки одна висить — наступні мовчать.
+let sayLockUntil = 0;
+function bubble(u,text){
+  if(!u||!u.el) return;
+  const now = performance.now();
+  if(now < sayLockUntil) return;            // вже хтось говорить — не одночасно
+  sayLockUntil = now + 1150;
+  document.querySelectorAll('.bubble').forEach(n=>n.remove());
+  // позиція в координатах вікна (fixed) — бульбашка не обмежена бордом
+  const r = u.el.getBoundingClientRect();
+  const left = r.left + r.width*(u.who==='cat'?0.34:0.66); // трохи вбік від голови
+  const top  = r.top  + r.height*0.30;                     // біля голови
+  const dx   = u.who==='cat' ? -34 : 34;                   // виліт назовні: кіт вліво, ворог вправо
+  const d=document.createElement('div'); d.className='bubble'; d.dataset.who=u.who;
+  d.style.left=left+'px'; d.style.top=top+'px'; d.style.setProperty('--dx',dx+'px');
+  d.innerHTML='<b>'+text+'</b>';
+  document.body.appendChild(d);
+  setTimeout(()=>{ if(d.parentNode) d.remove(); }, 1700);
+}
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function say(u,mode){                        // mode: 'attack' | 'hurt'
+  const key=(u.who==='cat'?'cat':'en')+(mode==='attack'?'Attack':'Hurt');
+  const pool=CURSES[key]; if(pool&&pool.length) bubble(u, pick(pool));
+}
+// Один удар — один мовець: або кривдник глузує, або потерпілий лається (не обидва).
+function clash(attacker, victim){
+  const r=Math.random();
+  if(r < 0.32)      say(attacker,'attack');
+  else if(r < 0.62) say(victim,'hurt');
+  // інакше — тиша
+}
+
+/* ---------- damage / fx helpers ---------- */
+function hurt(target, amount, bleed){
+  target.hp-=amount;
+  pop(target,'-'+amount,'#ff5a4a');
+  if(bleed) target.fx.bleed=true;
+  render();
+  if(target.hp<=0){ target.hp=0; render();
+    if(G.mode==='pvp') endBattlePvp(target.side===0?1:0);
+    else endBattle(target.who==='en'); }
+}
+function pop(u,text,color){
+  const c=cellPx();
+  const d=document.createElement('div'); d.className='pop'; d.textContent=text;
+  d.style.color=color||'#fff';
+  d.style.transform='translate('+(u.x*c)+'px,'+(u.y*c+6)+'px)';
+  $('units').appendChild(d);
+  setTimeout(()=>d.remove(),1000);
+}
+function punch(u){ const i=u.el.querySelector('.uinner'); i.classList.remove('punch'); void i.offsetWidth; i.classList.add('punch'); }
+function shake(u){ const i=u.el.querySelector('.uinner'); i.classList.remove('shake'); void i.offsetWidth; i.classList.add('shake'); }
+function projectile(from,to,emoji){
+  const c=cellPx();
+  const p=document.createElement('div'); p.className='proj'; p.textContent=emoji;
+  p.style.transform='translate('+(from.x*c)+'px,'+(from.y*c)+'px)';
+  $('units').appendChild(p);
+  requestAnimationFrame(()=>{ p.style.transform='translate('+(to.x*c)+'px,'+(to.y*c)+'px)'; });
+  setTimeout(()=>p.remove(),360);
+}
+
+/* ---------- Морквяна ракета Кролика ----------
+   Кролик дістає велетенську моркву, застрибує на неї, пірнає під землю,
+   риється ходом до ворога, вибухає з-під землі — і ракетою йде наскрізь у небо.
+   hit() — застосовує урон у момент вибуху, повертає true, якщо бій закінчився. */
+function fxSpawn(x,y,emoji,cls,ms){
+  const c=cellPx();
+  const d=document.createElement('div');
+  d.className='cellfx'+(cls?' '+cls:'');
+  d.style.transform='translate('+(x*c)+'px,'+(y*c)+'px)';
+  const s=document.createElement('span'); s.textContent=emoji;
+  d.appendChild(s);
+  $('units').appendChild(d);
+  if(ms) setTimeout(()=>{ if(d.parentNode) d.remove(); },ms);
+  return d;
+}
+
+/* ---------- 🦘 Кролячий стрибок: дуговий gap-closer + приземлення на ціль ---------- */
+// Найближча вільна клітина впритул до цілі в межах дальності стрибка (null, якщо нема).
+function leapTarget(en,target,maxRange){
+  let best=null, bestD=Infinity;
+  for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+    if(dx===0&&dy===0) continue;
+    const x=target.x+dx, y=target.y+dy;
+    if(x<0||x>=COLS||y<0||y>=ROWS) continue;
+    const d=cheb(en,{x,y});
+    if(d<=maxRange && d<bestD){ best={x,y}; bestD=d; }
+  }
+  return best;
+}
+// Стрибок по дузі на клітину land. Повертає true, якщо приземлився впритул до цілі.
+async function leapSlam(attacker,target,land){
+  const ox=attacker.x, oy=attacker.y;             // клітина зльоту
+  attacker.x=land.x; attacker.y=land.y;
+  if(!attacker.el){ updateUnitPos(); return cheb(attacker,target)<=1; }
+  const inner=attacker.el.querySelector('.uinner');
+  fxSpawn(ox,oy,'💨','fx-dust',600);              // курява відштовхування
+  // підйом + політ
+  inner.style.transition='transform .26s ease-out';
+  inner.style.transform='translateY(-48px) scale(1.12)';
+  attacker.el.style.transition='transform .42s cubic-bezier(.4,0,.6,1)';
+  updateUnitPos();
+  await sleep(320);
+  if(abort||!G){ inner.style.transition=''; inner.style.transform=''; attacker.el.style.transition=''; return false; }
+  // приземлення
+  inner.style.transition='transform .16s ease-in';
+  inner.style.transform='translateY(8px) scale(.92)';
+  await sleep(150);
+  fxSpawn(land.x,land.y,'💥','fx-boom',600);
+  shake(attacker);
+  inner.style.transition='none'; inner.style.transform='';
+  attacker.el.style.transition='';
+  await sleep(60);
+  return cheb(attacker,target)<=1;
+}
+
+async function carrotRocketAttack(attacker, target, hit){
+  const c=cellPx();
+  const ax=attacker.x, ay=attacker.y, tx=target.x, ty=target.y;
+  if(!attacker.el || !target.el){ hit(); return; }
+  const inner=attacker.el.querySelector('.uinner');
+
+  // 1) дістає велетенську моркву
+  punch(attacker);
+  log('<b>'+attacker.name+'</b> дістає велетенську моркву… 🥕');
+  const carrot=fxSpawn(ax,ay,'🥕','fx-carrot',null);
+  await sleep(540);
+  if(abort||!G){ if(carrot.parentNode)carrot.remove(); return; }
+
+  // 2) застрибує на моркву
+  inner.style.transition='transform .3s cubic-bezier(.3,1.5,.5,1)';
+  inner.style.transform='translateY(-20px) scale(1.05)';
+  await sleep(300);
+  if(abort||!G){ if(carrot.parentNode)carrot.remove(); inner.style.transition=''; inner.style.transform=''; return; }
+
+  // 3) пірнає під землю (морква + кролик тонуть, курява)
+  fxSpawn(ax,ay,'💨','fx-dust',650);
+  inner.style.transition='transform .34s ease-in';
+  inner.style.transform='translateY(60px) scale(.45)';
+  carrot.style.transition='transform .34s ease-in';
+  carrot.style.transform='translate('+(ax*c)+'px,'+(ay*c+56)+'px)';
+  if(carrot.firstChild) carrot.firstChild.style.opacity='0';
+  await sleep(360);
+  if(carrot.parentNode) carrot.remove();
+  attacker.el.style.opacity='0';                 // кролик тепер під землею
+  inner.style.transition='none'; inner.style.transform='';
+  if(abort||!G) return;
+
+  // 4) риється ходом під землею до ворога (земляний горбик + курява вздовж шляху)
+  const mound=fxSpawn(ax,ay,'🟫','fx-mound',null);
+  const steps=Math.max(1,Math.max(Math.abs(tx-ax),Math.abs(ty-ay)));
+  await sleep(20);
+  mound.style.transition='transform .55s linear';
+  mound.style.transform='translate('+(tx*c)+'px,'+(ty*c)+'px)';
+  for(let s=1;s<steps;s++){
+    const px=Math.round(ax+(tx-ax)*s/steps), py=Math.round(ay+(ty-ay)*s/steps);
+    setTimeout(()=>{ if(!abort&&G) fxSpawn(px,py,'💨','fx-dust',600); }, s*550/steps);
+  }
+  await sleep(580);
+  if(mound.parentNode) mound.remove();
+  if(abort||!G) return;
+
+  // 5) вибухає з-під землі біля ворога — і ракетою наскрізь у небо
+  fxSpawn(tx,ty,'💥','fx-boom',650);
+  shake(target);
+  hit();                                          // урон саме в момент вибуху
+
+  const rect=cellEl(tx,ty).getBoundingClientRect();
+  const rocket=document.createElement('div'); rocket.className='skyrocket';
+  rocket.innerHTML='<div class="sr-rab">'+attacker.emoji+'</div>'+
+                   '<div class="sr-car">🥕</div><div class="sr-fire">🔥</div>';
+  rocket.style.left=(rect.left+rect.width/2)+'px';
+  rocket.style.top=rect.top+'px';
+  document.body.appendChild(rocket);
+  const travel=rect.bottom+200;                   // вище за верх вікна — у «небо»
+  requestAnimationFrame(()=>{
+    rocket.style.transition='transform 1.1s cubic-bezier(.42,0,.7,1), opacity 1.1s ease-in';
+    rocket.style.transform='translate(-50%,-'+travel+'px)';
+    rocket.style.opacity='0.12';
+  });
+  setTimeout(()=>{ if(rocket.parentNode) rocket.remove(); },1200);
+
+  await sleep(760);
+  // 6) кролик плавно спускається назад на своє місце
+  if(abort||!G||G.phase==='ended') return;
+  attacker.el.style.opacity='';
+  inner.style.transition='none'; inner.style.transform='translateY(-80px)';
+  void inner.offsetWidth;
+  inner.style.transition='transform .55s cubic-bezier(.3,1.2,.5,1)';
+  inner.style.transform='';
+  fxSpawn(ax,ay,'🪂','fx-float',900);
+  await sleep(560);
+  inner.style.transition='';
+}
+
+/* ---------- 🌋 Сейсмострибок: кролик злітає і ламає землю навколо ---------- */
+async function quakeJumpAttack(attacker, hitFn){
+  if(!attacker.el){ hitFn(); return; }
+  const inner=attacker.el.querySelector('.uinner');
+
+  // 1. Присідає перед стрибком
+  inner.style.transition='transform .14s ease-in';
+  inner.style.transform='scaleY(.8) translateY(8px)';
+  await sleep(150);
+  if(abort||!G){ inner.style.transition=''; inner.style.transform=''; return; }
+
+  // 2. Зліт
+  inner.style.transition='transform .3s cubic-bezier(.18,1.75,.35,1)';
+  inner.style.transform='translateY(-92px) scale(1.12)';
+  fxSpawn(attacker.x,attacker.y,'💨','fx-dust',550);
+  log('<b>'+attacker.name+'</b>: СЕЙСМОСТРИБОК! 🌋');
+  await sleep(370);
+  if(abort||!G){ inner.style.transition=''; inner.style.transform=''; return; }
+
+  // 3. Короткий зависання у повітрі
+  await sleep(110);
+  if(abort||!G){ inner.style.transition=''; inner.style.transform=''; return; }
+
+  // 4. Удар об землю
+  inner.style.transition='transform .12s ease-in';
+  inner.style.transform='translateY(13px) scale(.86)';
+  await sleep(120);
+  if(abort||!G){ inner.style.transition=''; inner.style.transform=''; return; }
+  inner.style.transition='transform .1s ease-out';
+  inner.style.transform='';
+
+  // 5. Тряска борда + вибух у точці приземлення
+  const board=$('board');
+  board.classList.remove('quake-shake'); void board.offsetWidth; board.classList.add('quake-shake');
+  setTimeout(()=>board.classList.remove('quake-shake'),650);
+  fxSpawn(attacker.x,attacker.y,'💥','fx-boom',720);
+
+  // 6. Хвиля тріщин розповсюджується кільцями (1→6)
+  for(let dist=1;dist<=6;dist++){
+    const delay=dist*52;
+    const emoji=dist<=2?'🔥':dist<=4?'⚡':'💢';
+    for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+      if(cheb({x,y},attacker)===dist){
+        setTimeout(((cx,cy)=>()=>{ if(!abort&&G) fxSpawn(cx,cy,emoji,'fx-quakecrack',720); })(x,y), delay);
+      }
+    }
+  }
+
+  await sleep(290);
+
+  // 7. Урон
+  hitFn();
+
+  await sleep(430);
+  inner.style.transition='';
+}
+
+/* ---------- TAP minigame ---------- */
+function tapChallenge({title,duration,goal,sub}){
+  return new Promise(resolve=>{
+    let taps=0, done=false;
+    $('tapTitle').textContent=title;
+    $('tapSub').textContent=sub||'';
+    $('tapMeter').style.width='0%';
+    $('tapTime').style.width='100%';
+    $('ovTap').classList.add('show');
+    const btn=$('tapBtn');
+    const onTap=()=>{ if(done)return; taps++; $('tapMeter').style.width=Math.min(100,100*taps/goal)+'%';
+      if(taps>=goal) finish(); };
+    btn.onclick=onTap;
+    const start=performance.now();
+    const tick=setInterval(()=>{
+      const t=performance.now()-start, left=clamp(1-t/duration,0,1);
+      $('tapTime').style.width=(left*100)+'%';
+      if(t>=duration) finish();
+    },50);
+    function finish(){
+      if(done)return; done=true; clearInterval(tick);
+      btn.onclick=null; $('ovTap').classList.remove('show');
+      resolve({taps,success:taps>=goal});
+    }
+  });
+}
+
+/* ---------- end / start turn ---------- */
+function afterAction(){
+  if(!G||abort) return;
+  // повертаємо керування гравцю: перемальовуємо кнопки після зняття busy
+  render();
+  if(G.turn==='cat' && G.actions<=0 && !G.busy) setTimeout(endTurn,420);
+}
+function endTurn(){
+  if(!G||abort) return;
+  if(G.mode==='pvp'){ endTurnPvp(); return; }
+  if(G.turn!=='cat'||G.busy) return;
+  G.selected=null;
+  // decrement cat effects at end of cat turn
+  if(G.cat.fx.fear>0) G.cat.fx.fear--;
+  if(G.cat.fx.dizzy>0) G.cat.fx.dizzy--;
+  if(G.cat.buff.mouse>0) G.cat.buff.mouse--;
+  if(G.teleCd>0) G.teleCd--;
+  render();
+  enemyTurn();
+}
+
+async function enemyTurn(){
+  if(!G||abort) return;
+  G.busy=true; G.turn='en'; setHint('Хід ворога…'); render();
+  const en=G.enemy, cat=G.cat;
+  await sleep(400);
+  if(abort||!G) return;
+  // start-of-turn bleed
+  if(en.fx.bleed){ pop(en,'-4','#ff5a4a'); en.hp-=4; if(Math.random()<0.3) say(en,'hurt'); render(); log(en.name+' стікає кров\'ю: −4 HP.');
+    await sleep(300); if(en.hp<=0){en.hp=0;render();return endBattle(true);} }
+  let acts = 3 - (G.enemyPenalty?1:0);
+  G.enemyPenalty=false;
+  const feared = en.fx.fear>0;
+  const dizzy = en.fx.dizzy>0;
+  for(let i=0;i<acts;i++){
+    if(en.hp<=0) break;
+    await sleep(450);
+    if(abort||!G) return;
+    const d=cheb(en,cat);
+    const act = chooseEnemyAction(en,d,feared,dizzy);
+    if(!act){ log(en.name+(feared?' у переляку — не може діяти.':' вичікує.')); continue; }
+    await doEnemyAction(act);
+    if(abort||!G) return;
+    if(cat.hp<=0) return; // battle ended inside
+  }
+  await sleep(350);
+  // decrement enemy effects at end of its turn
+  if(en.fx.fear>0) en.fx.fear--;
+  if(en.fx.dizzy>0) en.fx.dizzy--;
+  if(en.buff.might>0) en.buff.might--;
+  startCatTurn();
+}
+
+function chooseEnemyAction(en,d,feared,dizzy){
+  const ab=id=>en.def.abilities.find(a=>a.id===id);
+  // boss buff
+  if(en.boss && !dizzy && en.buff.might<=0 && Math.random()<0.45){ return {type:'ability',a:ab('trash')}; }
+  if(en.def.key==='owl'){
+    if(!dizzy && d<=3 && Math.random()<0.45) return {type:'ability',a:ab('fall')};  // 💫 блокує спецприйом
+    if(d<=5) return {type:'ability',a:ab('feather')};
+  } else {
+    // melee in range?
+    const melee=en.def.abilities.find(a=>a.range===1);
+    if(melee && d<=1) return {type:'ability',a:melee};
+    // Кролик: стрибок, щоб скоротити дистанцію і приземлитися на ціль
+    const leap=en.def.abilities.find(a=>a.special==='leap');
+    if(leap && !feared && d>1 && d<=leap.range && leapTarget(en,G.cat,leap.range) && Math.random()<0.55)
+      return {type:'ability',a:leap};
+    const quake=en.def.abilities.find(a=>a.special==='quake');
+    if(quake && !feared && d<=quake.range && Math.random()<0.38)
+      return {type:'ability',a:quake};
+    const ranged=en.def.abilities.find(a=>a.range>1 && !a.special);
+    if(ranged && d<=ranged.range) return {type:'ability',a:ranged};
+  }
+  // need to close distance
+  if(!feared) return {type:'move'};
+  return null;
+}
+
+async function doEnemyAction(act){
+  if(!G||abort) return;
+  const en=G.enemy, cat=G.cat;
+  if(act.type==='move'){ startWalk(en); enemyMove(); await sleep(360); stopWalk(en);
+    // after moving, try to attack immediately is handled next loop iter
+    return;
+  }
+  const a=act.a;
+  if(a.special==='buff'){
+    en.buff.might=2; pop(en,'🗑️','#ffd27a'); shake(en);
+    log('<b>'+en.name+'</b> риється у смітнику — +50% урону!');
+    render(); await sleep(300); return;
+  }
+  if(a.special==='tap'){
+    // Owl: Fall from darkness
+    punch(en);
+    log('<b>'+en.name+'</b>: Падіння з пітьми! Швидко тапай!');
+    pop(cat,'🌑','#888');
+    await sleep(300);
+    const res=await tapChallenge({title:'🌑 Падіння з пітьми — тапай!',duration:2600,goal:14,sub:'Виривайся! Інакше −45 HP'});
+    if(res.success){
+      shake(en); const dmg=rollDmg(10); en.hp-=dmg; pop(en,'-'+dmg,'#ff5a4a'); clash(cat,en);
+      log('Іван Готівка вирвався! Сова отримує '+dmg+' урону.');
+      render(); if(en.hp<=0){en.hp=0;render();return endBattle(true);}
+    } else {
+      shake(cat); const dmg=Math.round(rollDmg(45)*dmgMult(en)); cat.hp-=dmg; pop(cat,'-'+dmg,'#ff5a4a'); clash(en,cat);
+      log('Іван Готівка не вирвався — <b>'+dmg+'</b> урону!');
+      render(); if(cat.hp<=0){cat.hp=0;render();return endBattle(false);}
+    }
+    await sleep(250); return;
+  }
+  if(a.id==='carrot'){
+    // Морквяна ракета: дістає моркву → під землю → у небо
+    const dmg=Math.round(rollDmg(a.dmg)*dmgMult(en));
+    const hit=()=>{
+      cat.hp-=dmg; pop(cat,'-'+dmg,'#ff5a4a'); clash(en,cat);
+      if(a.bleed) cat.fx.bleed=true;
+      log('<b>'+en.name+'</b>: Морквяна ракета — <b>'+dmg+'</b> урону'+(a.bleed?' + 🩸':''));
+      render();
+      if(cat.hp<=0){ cat.hp=0; render(); endBattle(false); return true; }
+      return false;
+    };
+    await carrotRocketAttack(en,cat,hit);
+    return;
+  }
+  if(a.special==='leap'){
+    // 🦘 Кролячий стрибок: дуга до цілі + удар при приземленні впритул
+    const land=leapTarget(en,cat,a.range)||{x:en.x,y:en.y};
+    const adj=await leapSlam(en,cat,land);
+    if(abort||!G) return;
+    if(adj){
+      const dmg=Math.round(rollDmg(a.dmg)*dmgMult(en));
+      cat.hp-=dmg; pop(cat,'-'+dmg,'#ff5a4a'); shake(cat); clash(en,cat);
+      log('<b>'+en.name+'</b>: '+a.name+' — приземлення на ціль, <b>'+dmg+'</b> урону!');
+      render();
+      if(cat.hp<=0){ cat.hp=0; render(); return endBattle(false); }
+    } else {
+      log('<b>'+en.name+'</b>: '+a.name+' — скоротив дистанцію.');
+    }
+    await sleep(200);
+    return;
+  }
+  if(a.special==='quake'){
+    // 🌋 Сейсмострибок: кролик злітає — земля тріщить на 6 клітин навколо
+    const dmg=Math.round(rollDmg(a.dmg)*dmgMult(en));
+    const inRange=cheb(en,cat)<=a.range;
+    const hitFn=()=>{
+      if(!inRange) return;
+      shake(cat); cat.hp-=dmg; pop(cat,'-'+dmg,'#ff5a4a'); clash(en,cat);
+      render();
+      if(cat.hp<=0){ cat.hp=0; render(); endBattle(false); }
+    };
+    await quakeJumpAttack(en, hitFn);
+    if(abort||!G) return;
+    if(inRange) log('<b>'+en.name+'</b>: Сейсмострибок — кіт отримує <b>'+dmg+'</b> урону!');
+    return;
+  }
+  // standard damaging ability
+  punch(en);
+  if(a.proj) projectile(en,cat,a.proj);
+  const dmg=Math.round(rollDmg(a.dmg)*dmgMult(en));
+  await sleep(a.proj?330:120);
+  shake(cat); cat.hp-=dmg; pop(cat,'-'+dmg,'#ff5a4a'); clash(en,cat);
+  if(a.bleed) cat.fx.bleed=true;
+  log('<b>'+en.name+'</b>: '+a.name+' — <b>'+dmg+'</b> урону'+(a.bleed?' + 🩸':''));
+  render();
+  if(cat.hp<=0){ cat.hp=0; render(); return endBattle(false); }
+  await sleep(200);
+}
+
+function enemyMove(){
+  const en=G.enemy, cat=G.cat;
+  const dx=Math.sign(cat.x-en.x), dy=Math.sign(cat.y-en.y);
+  let nx=en.x+dx*Math.min(en.move,Math.abs(cat.x-en.x));
+  let ny=en.y+dy*Math.min(en.move,Math.abs(cat.y-en.y));
+  // don't land on the cat — stop one short on the dominant axis
+  if(nx===cat.x&&ny===cat.y){
+    if(Math.abs(cat.x-en.x)>=Math.abs(cat.y-en.y)) nx-=dx; else ny-=dy;
+  }
+  nx=clamp(nx,0,COLS-1); ny=clamp(ny,0,ROWS-1);
+  if(nx===cat.x&&ny===cat.y){ nx=en.x; ny=en.y; }
+  en.x=nx; en.y=ny; updateUnitPos();
+  log(en.name+' наближається.');
+}
+
+function startCatTurn(){
+  if(!G||abort) return;
+  G.turn='cat';
+  if(G.noIncNextCat){ G.noIncNextCat=false; } else { G.round++; }  // не плюсуємо раунд, якщо ворог ходив першим
+  G.maxActions = 3; G.actions = 3;
+  G.selected=null; G.busy=false;
+  // start-of-turn bleed for cat
+  if(G.cat.fx.bleed){ G.cat.hp-=4; pop(G.cat,'-4','#ff5a4a'); if(Math.random()<0.3) say(G.cat,'hurt'); log('Іван Готівка стікає кров\'ю: −4 HP.');
+    if(G.cat.hp<=0){ G.cat.hp=0; render(); return endBattle(false); } }
+  setHint('Твій хід! '+(G.cat.fx.fear>0?'😱 Переляк — рух заблоковано. ':'')+(G.cat.fx.dizzy>0?'💫 Закляття заблоковані. ':''));
+  render();
+}
+
+/* ---------- coin toss: тапни монетку, вона реально крутиться ---------- */
+function coinToss(){
+  G.busy=true; G.selected=null; render();
+  const catFirst = Math.random()<0.5;            // 🐱 КІТ vs 👱 ТРАМП
+  const coin=$('coin');
+  // скидаємо стан монетки
+  coin.classList.add('idle'); coin.classList.remove('flipping');
+  coin.style.transition='none'; coin.style.transform='';
+  $('coinHint').textContent='Тапни монетку, щоб підкинути!';
+  $('coinTap').style.display='';
+  $('coinGo').style.display='none';
+  $('ovCoin').classList.add('show');
+  let flipped=false;
+  const flip=()=>{
+    if(flipped) return; flipped=true;
+    coin.classList.remove('idle'); coin.classList.add('flipping');
+    $('coinTap').style.display='none';
+    $('coinHint').textContent='Монетка крутиться…';
+    const turns = 5 + Math.floor(Math.random()*4);          // 5..8 повних обертів
+    const endDeg = turns*360 + (catFirst?0:180);            // парний бік = КІТ, +180 = ТРАМП
+    coin.style.transition='none'; coin.style.transform='rotateY(0deg)';
+    void coin.offsetWidth;                                   // reflow, щоб анімація стартувала з нуля
+    coin.style.transition='transform 2.7s cubic-bezier(.15,.65,.2,1)';
+    coin.style.transform='rotateY('+endDeg+'deg)';
+    setTimeout(()=>{
+      const who = catFirst ? 'Іван Готівка 🐱' : (G.enemy.name+' '+G.enemy.emoji);
+      $('coinHint').innerHTML='Випало <b>'+(catFirst?'ІВАН':'ТРАМП')+'</b>! Першим ходить '+who;
+      log('🪙 Жереб: випало <b>'+(catFirst?'ІВАН':'ТРАМП')+'</b> — першим ходить '+who+'.');
+      const go=$('coinGo'); go.style.display=''; go.textContent=catFirst?'⚔️ Мій хід':'➡️ Хід ворога';
+      go.onclick=()=>{
+        $('ovCoin').classList.remove('show'); coin.onclick=null;
+        if(catFirst){
+          G.busy=false; G.turn='cat';
+          if(G.battleIndex!==0) setHint('Твій хід! Обери дію.');
+          render();
+        } else {
+          G.noIncNextCat=true;   // перший хід Кота лишиться раундом 1
+          enemyTurn();
+        }
+      };
+    }, 2800);
+  };
+  coin.onclick=flip;
+}
+
+/* ---------- battle end / progression ---------- */
+function endBattle(win){
+  if(!G) return;
+  G.busy=true; G.phase='ended'; clearHL();
+  if(!win){
+    showMsg('💀','Поразка…','Івана Готівку здолали. Спробуй ще раз — тактика вирішує все.','🔄 Спробувати знову',()=>{ hideMsg(); loadBattle(); });
+    return;
+  }
+  const wasBoss = G.enemy.boss;
+  const last = G.battleIndex>=ENEMIES.length-1;
+  if(last && wasBoss){
+    showMsg('🏆','МІСІЮ 1 ЗАВЕРШЕНО!',
+      'Гігантська Криса повалена! З тіні виходить пес <b>Барсік</b> 🐕 — союзник із новими вміннями (Димова завіса, Шарик, «Пук»). Помста лише починається…',
+      '🎉 У меню',()=>{ hideMsg(); $('battle').style.display='none'; $('menu').style.display='block'; });
+    return;
+  }
+  const nextName=ENEMIES[G.battleIndex+1].name;
+  showMsg('✅','Перемога!','Ти здолав '+G.enemy.name+'. Далі — <b>'+nextName+'</b>. HP відновлено.',
+    '➡️ Далі',()=>{ hideMsg(); G.battleIndex++; loadBattle(); });
+}
+
+/* ---------- messages / help ---------- */
+function showMsg(icon,title,body,btn,cb,btn2,cb2){
+  $('msgIcon').textContent=icon; $('msgTitle').textContent=title; $('msgBody').innerHTML=body;
+  const b=$('msgBtn'); b.textContent=btn; b.onclick=cb;
+  const b2=$('msgBtn2');
+  if(btn2){ b2.style.display=''; b2.textContent=btn2; b2.onclick=cb2; }
+  else { b2.style.display='none'; b2.onclick=null; }
+  $('ovMsg').classList.add('show');
+}
+function hideMsg(){ $('ovMsg').classList.remove('show'); }
+function toggleHelp(v){ $('ovHelp').classList.toggle('show',v); }
+
+/* ---------- logging ---------- */
+function log(msg){
+  const el=$('log'); const d=document.createElement('div'); d.innerHTML=msg;
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
+  while(el.children.length>40) el.removeChild(el.firstChild);
+}
+
+/* ---------- tutorial ---------- */
+function tutorial(){
+  const tips=[
+    'Навчання: натисни <b>🏃 Рух</b> і клікни синю клітину, щоб підійти до Кролика.',
+    'У ближньому бою тисни <b>🔪 Удар</b> (радіус 1). Здалеку — <b>🎯 Кидок</b> або <b>🐾 Порізи</b>.',
+    'Стеж за <b>діями</b> (кружечки зверху): їх 3 за раунд. <b>📖 Книга</b> — закляття 1 раз/бій.',
+    'Коли дії скінчаться — авто «Кінець ходу». Удачі, Іване Готівко!'
+  ];
+  let i=0;
+  const step=()=>{ if(i<tips.length){ setHint(tips[i]); i++; } };
+  step();
+  // advance the tip whenever player performs an action by listening once per render is overkill;
+  // keep it simple: rotate tips on a timer the first few seconds.
+  const iv=setInterval(()=>{ if(!G||G.battleIndex!==0||G.turn!=='cat'||G.enemy.hp<G.enemy.maxHp){clearInterval(iv);return;} step(); if(i>=tips.length)clearInterval(iv); },4200);
+}
+
+/* ============================================================
+   PvP — 2 гравці на одному пристрої (hot-seat)
+   ============================================================ */
+let abort=false;
+let pvpPick=[null,null];
+const CHARACTERS=[
+  { key:'cat', name:'Іван Готівка', emoji:'🐈', hp:90, move:3, abilities:[
+    {id:'strike', name:'🔪 Удар', cost:1, type:'damage', dmg:17, range:1, bleed:true},
+    {id:'throw',  name:'🎯 Кидок', cost:1, type:'damage', dmg:10, range:7, bleed:true, scale:true, proj:'🔪'},
+    {id:'scratch',name:'🐾 Порізи', cost:2, type:'tap', dmg:37, range:3, bleed:true, goal:10, dur:2500},
+    {id:'gaze',   name:'👁️ Погляд', cost:1, type:'fear', range:4},
+  ]},
+  { key:'rabbit', name:'Кролик', emoji:'🐰', hp:100, move:2, abilities:[
+    {id:'carrot', name:'🥕 Морква', cost:1, type:'damage', dmg:15, range:6, proj:'🥕'},
+    {id:'foot',   name:'🦶 Лапка', cost:1, type:'damage', dmg:15, range:1},
+    {id:'quake',  name:'🌋 Сейсмострибок', cost:2, type:'quake', dmg:20, range:6},
+  ]},
+  { key:'owl', name:'Сова', emoji:'🦉', hp:70, move:3, abilities:[
+    {id:'fall',   name:'🌑 Падіння', cost:2, type:'tap', dmg:45, range:3, goal:12, dur:2600},
+    {id:'feather',name:"🪶 Пір'я", cost:1, type:'damage', dmg:7, range:5, bleed:true, proj:'🪶'},
+  ]},
+  { key:'rat', name:'Криса', emoji:'🐀', hp:175, move:2, abilities:[
+    {id:'cheese', name:'🧀 Сир', cost:1, type:'damage', dmg:20, range:6, proj:'🧀'},
+    {id:'bite',   name:'🦷 Укус', cost:1, type:'damage', dmg:25, range:1, bleed:true},
+    {id:'trash',  name:'🗑️ Смітник', cost:1, type:'buff'},
+  ]},
+];
+
+function openPvp(){
+  netClose();
+  pvpPick=[null,null];
+  $('menu').style.display='none';
+  if($('pvpOnline')) $('pvpOnline').style.display='none';
+  if($('pvpSelectSub')) $('pvpSelectSub').textContent='Два гравці на одному пристрої. Оберіть бійців — і у бій!';
+  $('pvpSelect').style.display='block';
+  renderPvpSelect();
+}
+function backToMenuFromPvp(){
+  $('pvpSelect').style.display='none';
+  $('menu').style.display='block';
+}
+function renderPvpSelect(){
+  for(let p=0;p<2;p++){
+    const box=$('pick'+p);
+    const locked = NET.online && p!==NET.myIdx;
+    box.innerHTML=CHARACTERS.map(c=>{
+      const sel=pvpPick[p]===c.key;
+      const ab=c.abilities.map(a=>a.name).join(' · ');
+      const click = locked ? '' : ' onclick="pickChar('+p+',\''+c.key+'\')"';
+      return '<div class="charcard'+(sel?' sel':'')+(locked?' locked':'')+'"'+click+'>'+
+        '<div class="cface">'+c.emoji+'</div>'+
+        '<div class="cinfo"><b>'+c.name+'</b>'+
+        '<small>❤️ '+c.hp+' · 🏃 рух '+c.move+'</small>'+
+        '<small>'+ab+'</small></div></div>';
+    }).join('');
+  }
+  if($('pvpP0title')) $('pvpP0title').textContent = '🔵 Гравець 1'+(NET.online&&NET.myIdx===0?' (ти)':'');
+  if($('pvpP1title')) $('pvpP1title').textContent = '🔴 Гравець 2'+(NET.online&&NET.myIdx===1?' (ти)':'');
+  const both = pvpPick[0]&&pvpPick[1];
+  const btn=$('pvpStartBtn');
+  if(NET.online && NET.myIdx!==0){
+    btn.disabled=true; btn.textContent = both ? '⏳ Очікує господаря…' : 'Обери персонажа';
+  } else {
+    btn.disabled=!both; btn.textContent='▶ Почати бій';
+  }
+}
+function pickChar(p,key){
+  if(NET.online && p!==NET.myIdx) return;
+  pvpPick[p]=key;
+  if(NET.online && NET.conn) netSend({t:'pick',idx:p,key:key});
+  renderPvpSelect();
+}
+function pvpStartBtnClick(){
+  if(!(pvpPick[0]&&pvpPick[1])) return;
+  if(NET.online){
+    if(NET.myIdx!==0) return;
+    netSend({t:'start',picks:pvpPick});
+  }
+  startPvp();
+}
+
+function makePvpUnit(key,side){
+  const c=CHARACTERS.find(k=>k.key===key);
+  return { who: side===0?'p0':'p1', side, name:c.name, emoji:c.emoji,
+    x: side===0?0:9, y:2, hp:c.hp, maxHp:c.hp, move:c.move, char:c,
+    fx:{bleed:false,fear:0,dizzy:0}, buff:{might:0}, el:null };
+}
+function startPvp(){
+  if(!(pvpPick[0]&&pvpPick[1])) return;
+  abort=false;
+  $('menu').style.display='none';
+  $('pvpSelect').style.display='none';
+  $('battle').style.display='block';
+  const p0=makePvpUnit(pvpPick[0],0), p1=makePvpUnit(pvpPick[1],1);
+  G={ mode:'pvp', phase:'play', players:[p0,p1], cat:p0, enemy:p1,
+      active:0, round:1, actions:3, maxActions:3, selected:null, busy:false,
+      anchors:[], knife:null };
+  buildBoard();
+  $('missionBadge').textContent='⚔️ PvP — 2 гравці';
+  $('catName').textContent=p0.name;
+  $('enName').textContent=p1.name;
+  if(typeof setPixel==='function'){ setPixel($('catFace'),p0.emoji,40,22); setPixel($('enFace'),p1.emoji,40,22); }
+  else { $('catFace').textContent=p0.emoji; $('enFace').textContent=p1.emoji; }
+  $('log').innerHTML='';
+  placeUnits();
+  log('<b>PvP-бій!</b> Гравець 1 ('+p0.name+') проти Гравця 2 ('+p1.name+').');
+  startPvpTurn(0);
+}
+function startPvpTurn(idx){
+  if(!G||abort) return;
+  G.active=idx; G.actions=3; G.maxActions=3; G.selected=null; G.busy=false;
+  const me=G.players[idx];
+  if(me.fx.bleed){ me.hp-=4; pop(me,'-4','#ff5a4a'); log(me.name+' стікає кров\'ю: −4 HP.');
+    if(me.hp<=0){ me.hp=0; render(); return endBattlePvp(1-idx); } }
+  if(NET.online){
+    setHint(idx===NET.myIdx
+      ? ('<b>Твій хід!</b> '+(me.fx.fear>0?'😱 Переляк — рух заблоковано.':'Обери дію.'))
+      : ('⏳ Хід суперника… ('+me.name+')'));
+  } else {
+    setHint('Хід: <b>Гравець '+(idx+1)+'</b> — '+me.name+'. '+
+      (me.fx.fear>0?'😱 Переляк — рух заблоковано.':'Обери дію.'));
+  }
+  render();
+}
+function endTurnPvp(){
+  if(!G||abort||G.busy||G.phase==='ended') return;
+  const me=G.players[G.active];
+  G.selected=null;
+  if(me.fx.fear>0) me.fx.fear--;
+  if(me.fx.dizzy>0) me.fx.dizzy--;
+  if(me.buff.might>0) me.buff.might--;
+  const next=1-G.active;
+  if(next===0) G.round++;
+  render();
+  startPvpTurn(next);
+}
+function renderPvpControls(){
+  const me=G.players[G.active], box=$('controls');
+  const myTurn = !NET.online || G.active===NET.myIdx;
+  const playerTurn=!G.busy && G.phase!=='ended' && myTurn;
+  const can=c=>playerTurn && G.actions>=c;
+  const mk=(label,action,on,cost)=>'<button class="btn actbtn'+(G.selected===action?' gold':'')+'" '+
+    (on?'':'disabled')+' onclick="pvpChoose(\''+action+'\')">'+label+
+    (cost>0?'<span class="cost">'+cost+'</span>':'')+'</button>';
+  let html='';
+  html+=mk('🏃 Рух','move',can(1)&&me.fx.fear===0,1);
+  for(const a of me.char.abilities){ html+=mk(a.name,'ab:'+a.id,can(a.cost),a.cost); }
+  if(me.fx.bleed) html+=mk('🩹 Перев\'язка','bandage',can(2),2);
+  html+='<button class="btn red actbtn" '+(playerTurn?'':'disabled')+' onclick="pvpEndTurnBtn()">⏭️ Кінець ходу</button>';
+  box.innerHTML=html;
+}
+function renderPvpHighlights(){
+  const me=G.players[G.active], foe=G.players[1-G.active], s=G.selected;
+  if(!s) return;
+  if(s==='move'){
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+      if(x===me.x&&y===me.y) continue;
+      if(x===foe.x&&y===foe.y) continue;
+      if(cheb({x,y},me)<=me.move) cellEl(x,y).classList.add('move');
+    }
+  } else if(s.indexOf('ab:')===0){
+    const ab=me.char.abilities.find(a=>a.id===s.slice(3));
+    if(ab && ab.type==='quake'){
+      // підсвічуємо всю зону ураження (AoE 6 клітин)
+      for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+        if(!(x===me.x&&y===me.y) && cheb({x,y},me)<=ab.range) cellEl(x,y).classList.add('tgt');
+      }
+    } else if(ab && ab.range && cheb(me,foe)<=ab.range){
+      cellEl(foe.x,foe.y).classList.add('tgt');
+    }
+  }
+}
+function onCellPvp(x,y){
+  if(G.busy||!G.selected||G.phase==='ended') return;
+  if(NET.online && G.active!==NET.myIdx) return;
+  const me=G.players[G.active], foe=G.players[1-G.active], s=G.selected;
+  const onFoe=(x===foe.x&&y===foe.y);
+  if(s==='move'){
+    if(!onFoe && !(x===me.x&&y===me.y) && cheb({x,y},me)<=me.move) pvpMove(x,y);
+  } else if(s.indexOf('ab:')===0){
+    const ab=me.char.abilities.find(a=>a.id===s.slice(3));
+    if(ab && onFoe && cheb(me,foe)<=ab.range) pvpAbility(ab);
+  }
+}
+function pvpChoose(a){
+  if(G.busy||G.phase==='ended') return;
+  if(NET.online && G.active!==NET.myIdx) return;
+  if(a==='bandage'){ pvpBandage(); return; }
+  if(a==='move'){ G.selected=(G.selected==='move')?null:'move';
+    setHint(G.selected?'Клікни клітину, щоб перейти.':'Обери дію.'); render(); return; }
+  const me=G.players[G.active];
+  const ab=me.char.abilities.find(x=>x.id===a.slice(3));
+  if(!ab) return;
+  if(ab.type==='buff'){ pvpBuff(ab); return; }
+  G.selected=(G.selected===a)?null:a;
+  setHint(G.selected?('Клікни суперника (радіус '+(ab.range||1)+').'):'Обери дію.');
+  render();
+}
+async function pvpMove(x,y){
+  if(netCanSend()) netSend({t:'move',x:x,y:y});
+  G.busy=true; clearHL();
+  const me=G.players[G.active]; me.x=x; me.y=y; updateUnitPos();
+  await sleep(360);
+  if(abort||!G) return;
+  G.busy=false; spend(1);
+}
+function pvpBandage(){
+  const me=G.players[G.active];
+  if(netCanSend()) netSend({t:'bandage'});
+  me.fx.bleed=false; pop(me,'🩹','#76c95b'); log(me.name+' перев\'язав рани — 🩸 знято.');
+  spend(2);
+}
+function pvpBuff(ab){
+  const me=G.players[G.active];
+  if(netCanSend()) netSend({t:'buff',id:ab.id});
+  me.buff.might=2; pop(me,'🗑️','#ffd27a'); shake(me);
+  log(me.name+': '+ab.name+' — +50% урону (2 ходи).');
+  spend(1);
+}
+function pvpAfter(){
+  if(!G||abort) return;
+  render();
+  if(G.actions<=0 && !G.busy && G.phase!=='ended') setTimeout(endTurn,420);
+}
+function pvpAbility(ab){
+  const me=G.players[G.active], foe=G.players[1-G.active];
+  if(ab.type!=='tap' && netCanSend()) netSend({t:'ab',id:ab.id});
+  if(ab.type==='fear'){
+    punch(me); foe.fx.fear=1; pop(foe,'😱','#ffd27a');
+    log(me.name+': '+ab.name+' — суперник у <b>переляку</b>.'); spend(ab.cost); return;
+  }
+  if(ab.type==='tap'){
+    G.busy=true; render();
+    tapChallenge({title:ab.name+' — тисни ПРОБІЛ!',duration:ab.dur,goal:ab.goal,sub:'Натискай якнайшвидше!'})
+      .then(res=>{
+        if(abort||!G) return;
+        const frac=clamp(res.taps/ab.goal,0,1);
+        const dmg=Math.round(ab.dmg*frac*dmgMult(me));
+        if(netCanSend()) netSend({t:'tap',id:ab.id,dmg:dmg,taps:res.taps});
+        applyTapResult(ab,dmg,res.taps);
+      });
+    return;
+  }
+  if(ab.type==='leap'){
+    // 🦘 Кролячий стрибок (PvP)
+    G.busy=true; spend(ab.cost);
+    const land=leapTarget(me,foe,ab.range)||{x:me.x,y:me.y};
+    leapSlam(me,foe,land).then(adj=>{
+      if(abort||!G) return;
+      if(adj){ const dmg=Math.round(ab.dmg*dmgMult(me)); shake(foe); clash(me,foe); hurt(foe,dmg,ab.bleed);
+        log(me.name+': '+ab.name+' — <b>'+dmg+'</b> урону!'); }
+      else log(me.name+': '+ab.name+' — стрибок до суперника.');
+      if(G && !abort && G.phase!=='ended'){ G.busy=false; pvpAfter(); }
+    });
+    return;
+  }
+  if(ab.type==='quake'){
+    // 🌋 Сейсмострибок (PvP) — 2 дії
+    G.busy=true; spend(ab.cost);
+    const dmg=Math.round(rollDmg(ab.dmg)*dmgMult(me));
+    const inRange=cheb(me,foe)<=ab.range;
+    const hitFn=()=>{
+      if(!inRange) return;
+      shake(foe); clash(me,foe); hurt(foe,dmg,false);
+      log(me.name+': '+ab.name+' — <b>'+dmg+'</b> урону!');
+    };
+    quakeJumpAttack(me,hitFn).then(()=>{
+      if(G && !abort && G.phase!=='ended'){ G.busy=false; pvpAfter(); }
+    });
+    return;
+  }
+  if(ab.id==='carrot'){
+    // Морквяна ракета (PvP): дістає моркву → під землю → у небо
+    G.busy=true; spend(ab.cost);
+    const dmg=Math.round(ab.dmg*dmgMult(me));
+    const hit=()=>{
+      if(abort||!G) return true;
+      clash(me,foe); hurt(foe,dmg,ab.bleed);
+      log(me.name+': 🥕 Морквяна ракета — <b>'+dmg+'</b> урону'+(ab.bleed?' + 🩸':''));
+      return G.phase==='ended';
+    };
+    carrotRocketAttack(me,foe,hit).then(()=>{
+      if(G && !abort && G.phase!=='ended'){ G.busy=false; pvpAfter(); }
+    });
+    return;
+  }
+  const d=cheb(me,foe);
+  let base=ab.dmg;
+  if(ab.scale) base=clamp(Math.round(10*d/7),2,10);
+  const dmg=Math.round(base*dmgMult(me));
+  punch(me); clash(me,foe);
+  if(ab.proj){
+    projectile(me,foe,ab.proj);
+    setTimeout(()=>{ if(abort||!G) return; shake(foe); hurt(foe,dmg,ab.bleed); },330);
+  } else { shake(foe); hurt(foe,dmg,ab.bleed); }
+  log(me.name+': '+ab.name+' — <b>'+dmg+'</b> урону'+(ab.bleed?' + 🩸':''));
+  spend(ab.cost);
+}
+function endBattlePvp(winnerIdx){
+  if(!G||G.phase==='ended') return;
+  G.phase='ended'; G.busy=true; clearHL();
+  const w=G.players[winnerIdx];
+  const who = NET.online ? (winnerIdx===NET.myIdx?'Ти переміг! 🎉':'Суперник переміг.') : ('Гравець '+(winnerIdx+1)+' переміг!');
+  const body = '<b>'+who+'</b><br>('+w.name+' '+w.emoji+')';
+  if(NET.online){
+    showMsg('🏆','Кінець бою',body,'🏠 У меню',()=>{ hideMsg(); returnToMenu(true); });
+  } else {
+    showMsg('🏆','Перемога!',body,
+      '🔄 Реванш',()=>{ hideMsg(); startPvp(); },
+      '🏠 У меню',()=>{ hideMsg(); returnToMenu(true); });
+  }
+}
+function returnToMenu(skip){
+  if(!skip && G && G.phase!=='ended'){
+    if(!confirm('Вийти в меню? Поточний бій буде втрачено.')) return;
+  }
+  if(NET.online && NET.conn) netSend({t:'leave'});
+  netClose();
+  abort=true;
+  hideMsg(); closeSpells(); toggleHelp(false);
+  $('ovTap').classList.remove('show');
+  if($('ovCoin')) $('ovCoin').classList.remove('show');
+  $('battle').style.display='none';
+  $('pvpSelect').style.display='none';
+  if($('pvpOnline')) $('pvpOnline').style.display='none';
+  $('menu').style.display='block';
+  G=null;
+}
+
+/* ============================================================
+   PvP ОНЛАЙН — P2P через PeerJS (код-кімната, релей ходів)
+   ============================================================ */
+const NET = { peer:null, conn:null, online:false, myIdx:0, code:null };
+const PEER_PREFIX = 'gnizdo-pvp-2026-';
+
+function netCanSend(){ return NET.online && NET.conn && NET.conn.open && G && G.mode==='pvp' && G.active===NET.myIdx; }
+function netSend(msg){ if(NET.conn && NET.conn.open){ try{ NET.conn.send(msg); }catch(e){} } }
+function netClose(){
+  try{ if(NET.conn) NET.conn.close(); }catch(e){}
+  try{ if(NET.peer) NET.peer.destroy(); }catch(e){}
+  NET.conn=null; NET.peer=null; NET.online=false;
+}
+
+function openOnline(){
+  netClose();
+  $('menu').style.display='none';
+  $('pvpSelect').style.display='none';
+  $('battle').style.display='none';
+  $('pvpOnline').style.display='block';
+  showOnlinePane('home');
+}
+function showOnlinePane(which){
+  $('onlineHome').style.display = which==='home'?'block':'none';
+  $('onlineHost').style.display = which==='host'?'block':'none';
+  $('onlineJoin').style.display = which==='join'?'block':'none';
+}
+function backToMenuFromOnline(){
+  netClose();
+  $('pvpOnline').style.display='none';
+  $('menu').style.display='block';
+}
+function peerLibReady(){ return (typeof Peer !== 'undefined'); }
+
+function onlineCreate(){
+  if(!peerLibReady()){ alert('Бібліотека PeerJS не завантажилась — перевір інтернет і онови сторінку.'); return; }
+  netClose();
+  NET.myIdx=0;
+  const code = '777'; // ТЕСТ: фіксований код (поверни на random для релізу)
+  NET.code=code;
+  showOnlinePane('host');
+  $('onlineCode').textContent = code.split('').join(' ');
+  $('onlineHostStatus').textContent = 'Підключення до сервера…';
+  const peer = new Peer(PEER_PREFIX+code, {debug:1});
+  NET.peer=peer;
+  peer.on('open', ()=>{ $('onlineHostStatus').textContent = 'Очікування суперника… Скинь код другові.'; });
+  peer.on('error', (err)=>{
+    if(err && err.type==='unavailable-id'){ $('onlineHostStatus').textContent='Код зайнятий, генерую новий…'; setTimeout(onlineCreate,400); }
+    else $('onlineHostStatus').textContent = 'Помилка: '+((err&&err.type)||'зв\'язку');
+  });
+  peer.on('connection', (conn)=>{
+    if(NET.conn && NET.conn.open){ try{ conn.close(); }catch(e){} return; }  // вже зайнято
+    NET.conn=conn; wireConn(conn, true);
+  });
+}
+function onlineShowJoin(){
+  showOnlinePane('join');
+  $('onlineJoinStatus').textContent='';
+  $('onlineCodeInput').value='';
+  setTimeout(()=>{ try{ $('onlineCodeInput').focus(); }catch(e){} }, 60);
+}
+function onlineConnect(){
+  if(!peerLibReady()){ alert('Бібліотека PeerJS не завантажилась — перевір інтернет і онови сторінку.'); return; }
+  const code=(($('onlineCodeInput').value)||'').replace(/\D/g,'').slice(0,3);
+  if(code.length!==3){ $('onlineJoinStatus').textContent='Введи 3 цифри.'; return; }
+  netClose();
+  NET.myIdx=1; NET.code=code;
+  $('onlineJoinStatus').textContent='Підключення…';
+  const peer=new Peer({debug:1});
+  NET.peer=peer;
+  peer.on('open', ()=>{
+    const conn=peer.connect(PEER_PREFIX+code, {reliable:true});
+    NET.conn=conn; wireConn(conn, false);
+    $('onlineJoinStatus').textContent='З\'єднання з кодом '+code+'…';
+  });
+  peer.on('error', (err)=>{
+    const t=(err&&err.type)||'';
+    $('onlineJoinStatus').textContent = (t==='peer-unavailable') ? 'Кімнату не знайдено — перевір код.' : ('Помилка: '+(t||'зв\'язку'));
+  });
+}
+function wireConn(conn, isHost){
+  conn.on('open', ()=>{
+    NET.online=true;
+    openPvpForOnline();
+  });
+  conn.on('data', (data)=>{ try{ netRecv(data); }catch(e){ console.error('net',e); } });
+  conn.on('close', ()=>{ onPeerGone(); });
+  conn.on('error', ()=>{ onPeerGone(); });
+}
+function openPvpForOnline(){
+  pvpPick=[null,null];
+  $('pvpOnline').style.display='none';
+  $('menu').style.display='none';
+  $('battle').style.display='none';
+  if($('pvpSelectSub')) $('pvpSelectSub').textContent='🌐 Онлайн-бій. Кожен обирає СВОГО бійця.';
+  $('pvpSelect').style.display='block';
+  renderPvpSelect();
+}
+function onPeerGone(){
+  if(!NET.online && !(NET.conn)) return;
+  const wasOnline=NET.online;
+  netClose();
+  if(!wasOnline) return;
+  showMsg('🔌','З\'єднання втрачено','Суперник від\'єднався або зник зв\'язок.','🏠 У меню',()=>{
+    hideMsg();
+    $('battle').style.display='none'; $('pvpSelect').style.display='none'; $('pvpOnline').style.display='none';
+    $('menu').style.display='block'; G=null; abort=true;
+  });
+}
+function findActiveAb(id){ return (G && G.players) ? G.players[G.active].char.abilities.find(a=>a.id===id) : null; }
+function applyTapResult(ab,dmg,taps){
+  if(!G||abort) return;
+  const me=G.players[G.active], foe=G.players[1-G.active];
+  punch(me); shake(foe);
+  if(dmg>0){ clash(me,foe); hurt(foe,dmg,ab.bleed);
+    log(me.name+': '+ab.name+' — <b>'+dmg+'</b> урону ('+taps+' натискань)'); }
+  else log(me.name+': '+ab.name+' — промах, 0 урону.');
+  spend(ab.cost);
+  if(G && G.players[1-G.active] && G.players[1-G.active].hp>0 && G.phase!=='ended'){ G.busy=false; pvpAfter(); }
+}
+function pvpEndTurnBtn(){
+  if(!G||G.busy||G.phase==='ended') return;
+  if(NET.online && G.active!==NET.myIdx) return;
+  if(netCanSend()) netSend({t:'endTurn'});
+  endTurnPvp();
+}
+function netRecv(data){
+  if(!data || !data.t) return;
+  // ----- lobby -----
+  if(data.t==='pick'){ pvpPick[data.idx]=data.key; if($('pvpSelect').style.display!=='none') renderPvpSelect(); return; }
+  if(data.t==='start'){ pvpPick=data.picks; NET.online=true; startPvp(); return; }
+  if(data.t==='leave'){
+    NET.online=false; netClose();
+    showMsg('🔌','Суперник вийшов','Гравець залишив гру.','🏠 У меню',()=>{
+      hideMsg();
+      $('battle').style.display='none'; $('pvpSelect').style.display='none'; $('pvpOnline').style.display='none';
+      $('menu').style.display='block'; G=null; abort=true;
+    });
+    return;
+  }
+  // ----- in-game (applied as the OPPONENT's action: G.active is the sender) -----
+  if(!G || G.mode!=='pvp' || G.phase==='ended') return;
+  switch(data.t){
+    case 'move': pvpMove(data.x, data.y); break;
+    case 'ab':  { const ab=findActiveAb(data.id); if(ab) pvpAbility(ab); break; }
+    case 'buff':{ const ab=findActiveAb(data.id); if(ab) pvpBuff(ab); break; }
+    case 'bandage': pvpBandage(); break;
+    case 'tap': { const ab=findActiveAb(data.id); if(ab){ G.busy=true; applyTapResult(ab, data.dmg, data.taps); } break; }
+    case 'endTurn': endTurnPvp(); break;
+  }
+}
+
+/* keyboard: space to tap faster */
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space' && $('ovTap').classList.contains('show')){ e.preventDefault(); $('tapBtn').click(); }
+});
+
+/* ============================================================
+   АРКАДНА МУЗИКА — чіптюн через Web Audio API (без файлів)
+   ============================================================ */
+const Music = (()=>{
+  let ctx=null, master=null, timer=null, on=false, step=0, nextTime=0;
+  const BPM=132, STEP=15/BPM;               // 16-та нота (4 кроки на долю)
+  // частоти нот (Гц)
+  const N={ 0:0, A2:110.00, C3:130.81, D3:146.83, E3:164.81, G3:196.00,
+    A3:220.00, C4:261.63, D4:293.66, E4:329.63, F4:349.23, G4:392.00,
+    A4:440.00, B4:493.88, C5:523.25, D5:587.33, E5:659.25, G5:783.99, A5:880.00 };
+  // бадьорий зацикленний мотив (16 кроків × 4 такти)
+  const LEAD=[
+    N.A4,0,N.C5,N.E5, N.A5,0,N.E5,0, N.D5,0,N.C5,N.D5, N.E5,0,0,0,
+    N.G4,0,N.B4,N.D5, N.G5,0,N.D5,0, N.C5,0,N.B4,N.C5, N.D5,0,0,0,
+    N.A4,0,N.C5,N.E5, N.A5,0,N.G5,N.E5, N.F4,0,N.A4,N.C5, N.E5,0,0,0,
+    N.E4,0,N.G4,N.B4, N.E5,0,N.D5,0, N.C5,0,0,0, N.D5,0,N.E5,N.G5,
+  ];
+  const BASS=[
+    N.A2,0,N.A2,0, N.A2,0,N.E3,0, N.D3,0,N.D3,0, N.E3,0,N.E3,0,
+    N.G3,0,N.G3,0, N.G3,0,N.D3,0, N.C3,0,N.C3,0, N.G3,0,N.G3,0,
+    N.A2,0,N.A2,0, N.A2,0,N.A2,0, N.F4/2,0,N.F4/2,0, N.C4,0,N.C4,0,
+    N.E3,0,N.E3,0, N.E3,0,N.E3,0, N.C3,0,N.C3,0, N.D3,0,N.E3,0,
+  ];
+  function blip(freq,t,dur,type,vol){
+    if(!freq) return;
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(vol,t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t+dur+0.02);
+  }
+  function noise(t,vol){                     // ударний «шум» для ритму
+    const len=Math.floor(ctx.sampleRate*0.05);
+    const buf=ctx.createBuffer(1,len,ctx.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
+    const src=ctx.createBufferSource(); src.buffer=buf;
+    const g=ctx.createGain(); g.gain.value=vol;
+    src.connect(g); g.connect(master); src.start(t);
+  }
+  function schedule(){
+    while(nextTime < ctx.currentTime + 0.1){
+      const i=step%LEAD.length;
+      blip(LEAD[i], nextTime, STEP*1.4, 'square', 0.16);
+      blip(BASS[i], nextTime, STEP*1.8, 'triangle', 0.22);
+      if(i%4===0) noise(nextTime, 0.12);     // біт на кожну долю
+      if(i%8===4) noise(nextTime, 0.06);
+      nextTime += STEP; step++;
+    }
+  }
+  const QUIET=0, LOUD=0.5;                   // офф — без звуку; гучно по кліку
+  let loud=false;
+  function ensure(){
+    if(!ctx){
+      ctx=new (window.AudioContext||window.webkitAudioContext)();
+      master=ctx.createGain(); master.gain.value=QUIET; master.connect(ctx.destination);
+    }
+    if(ctx.state==='suspended') ctx.resume();
+  }
+  function start(){                          // завжди грає (тихо), запуск при першій взаємодії
+    if(on) return;
+    ensure();
+    on=true; step=0; nextTime=ctx.currentTime+0.05;
+    timer=setInterval(schedule,25);
+  }
+  function setLoud(v){
+    loud=v; ensure();
+    const now=ctx.currentTime, g=master.gain;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value,now);
+    g.linearRampToValueAtTime(loud?LOUD:QUIET, now+0.25);
+  }
+  return { start, toggle(){ start(); setLoud(!loud); return loud; }, isLoud(){ return loud; } };
+})();
+function toggleMusic(){
+  const loud=Music.toggle();
+  const btn=$('musicBtn');
+  btn.classList.toggle('loud',loud);
+  btn.title = loud?'Музика: гучно':'Музика: тихо';
+}
+/* автозапуск (тихо) при першій взаємодії — браузери блокують звук без жесту */
+function primeMusic(){
+  Music.start();
+  window.removeEventListener('pointerdown',primeMusic);
+  window.removeEventListener('keydown',primeMusic);
+}
+window.addEventListener('pointerdown',primeMusic);
+window.addEventListener('keydown',primeMusic);
+
+/* меню: піксель-арт фігурки героїв (Heroes 3) */
+document.querySelectorAll('.hero-img span').forEach((s,i)=>{
+  const e=(s.textContent||'').trim();
+  s.textContent='';
+  if(i===0) s.appendChild(catCanvas(46,'idle',false));   // Кіт-герой (джинси + AC/DC)
+  else if(e) s.appendChild(pixelEmoji(e, 52, 24));
+});
+</script>
+</body>
+</html>
