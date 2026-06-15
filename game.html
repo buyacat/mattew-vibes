@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4a2f00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mattew Vibes">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Ivan's Revenge</title>
 <style>
   :root{
@@ -493,6 +499,10 @@
   </div>
   <div class="center" style="margin-top:4px">
     <button class="btn green" onclick="openOnline()">🌐 PvP онлайн</button>
+  </div>
+  <div id="pwaInstallBar" style="display:none;text-align:center;margin-top:6px">
+    <button class="btn" id="pwaBtn" onclick="pwaTrigger()" style="font-size:13px;opacity:.85">📲 Додати на екран</button>
+    <div id="pwaIosHint" style="display:none;font-size:11px;color:#7a5020;margin-top:4px;padding:0 8px">Натисни <b>Поділитись</b> → <b>На екран «Домівка»</b></div>
   </div>
   <div class="center" style="margin-top:8px;border-top:1px dashed var(--wood);padding-top:8px" id="authMenuBtns">
     <button class="btn" onclick="openAuth('login')" style="font-size:13px;opacity:.85">🔑 Увійти</button>
@@ -2839,6 +2849,25 @@ setupPin('loginPin');setupPin('regPin');
   }catch(e){/* stay on auth screen */}
 })();
 })();
+
+// PWA install
+let _pwaPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); _pwaPrompt=e;
+  const bar=document.getElementById('pwaInstallBar');
+  if(bar) bar.style.display='';
+});
+window.pwaTrigger=function(){
+  if(_pwaPrompt){ _pwaPrompt.prompt(); _pwaPrompt.userChoice.then(()=>{_pwaPrompt=null; const b=document.getElementById('pwaInstallBar'); if(b)b.style.display='none';}); return; }
+  // iOS hint
+  const hint=document.getElementById('pwaIosHint'); if(hint) hint.style.display=hint.style.display==='none'?'':'none';
+};
+window.addEventListener('appinstalled',()=>{ const b=document.getElementById('pwaInstallBar'); if(b)b.style.display='none'; });
+// iOS detection: show button always on iOS Safari
+(function(){ const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
+  const sa=navigator.standalone; if(ios&&!sa){ const bar=document.getElementById('pwaInstallBar'); if(bar)bar.style.display=''; } })();
+// SW
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 <div id="coinOverlay" style="display:none"><div class="coin-scene"><div class="coin" id="theCoin"><div class="coin-face" id="coinFront"></div><div class="coin-face back" id="coinBack"></div></div></div><div class="coin-lbl" id="coinLbl">🪙 Підкидаємо…</div></div>
 </body>
