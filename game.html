@@ -302,8 +302,8 @@
   .charcard .cinfo small{display:block;opacity:.82;font-size:12px;line-height:1.35;}
   /* кнопка повернення в меню в шапці бою */
   .topbar .menubtn{padding:5px 12px;margin:0;font-size:13px;}
-  .charcard.locked{cursor:default;opacity:.92;}
-  .charcard.locked:hover{transform:none;filter:none;}
+  .charcard.locked{cursor:default;opacity:.38;filter:grayscale(70%);}
+  .charcard.locked:hover{transform:none;filter:grayscale(70%);}
   /* ---------- PvP online lobby ---------- */
   #pvpOnline{display:none;}
   .bigcode{font-family:'Courier New',monospace;font-weight:900;font-size:52px;letter-spacing:8px;
@@ -1796,6 +1796,7 @@ function renderPvpSelect(){
   for(let p=0;p<2;p++){
     const box=$('pick'+p);
     const locked = NET.online && p!==NET.myIdx;
+    if(box.parentElement){ box.parentElement.style.opacity=NET.online&&locked?'0.45':'1'; box.parentElement.style.filter=NET.online&&locked?'grayscale(60%)':'none'; }
     box.innerHTML=CHARACTERS.map(c=>{
       const sel=pvpPick[p]===c.key;
       const ab=c.abilities.map(a=>a.name).join(' · ');
