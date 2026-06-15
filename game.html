@@ -411,6 +411,7 @@
   <div class="center">
     <h1>⚔️ PvP — ВИБІР ПЕРСОНАЖІВ</h1>
     <p class="muted" id="pvpSelectSub">Оберіть бійців і — у бій!</p>
+    <p id="pickTimerLabel" class="muted" style="display:none;color:#e74c3c;font-weight:600;font-size:14px;margin:4px 0 0"></p>
   </div>
   <div class="row" style="margin-top:10px">
     <div style="flex:1 1 240px;min-width:240px">
@@ -1664,6 +1665,31 @@ function tutorial(){
    ============================================================ */
 let abort=false;
 let pvpPick=[null,null];
+let _pickTimer=null;
+function startPickTimer(){
+  stopPickTimer();
+  let sec=15;
+  const lbl=$('pickTimerLabel');
+  if(lbl){lbl.style.display='block';lbl.textContent='⏱ '+sec+'с до автовибору';}
+  _pickTimer=setInterval(()=>{
+    sec--;
+    if(lbl) lbl.textContent='⏱ '+sec+'с до автовибору';
+    if(sec<=0){
+      stopPickTimer();
+      const slot=NET.online?NET.myIdx:(pvpPick[0]?1:0);
+      if(!pvpPick[slot]){
+        const keys=CHARACTERS.map(c=>c.key);
+        pickChar(slot,keys[Math.floor(Math.random()*keys.length)]);
+      }
+      pvpStartBtnClick();
+    }
+  },1000);
+}
+function stopPickTimer(){
+  clearInterval(_pickTimer);_pickTimer=null;
+  const lbl=$('pickTimerLabel');
+  if(lbl) lbl.style.display='none';
+}
 const CHARACTERS=[
   { key:'cat', name:'Іван Готівка', emoji:'🐈', hp:90, move:3, abilities:[
     {id:'strike', name:'🔪 Удар', cost:1, type:'damage', dmg:17, range:1, bleed:true},
@@ -1729,7 +1755,8 @@ function renderPvpSelect(){
 function pickChar(p,key){
   if(NET.online && p!==NET.myIdx) return;
   pvpPick[p]=key;
-  if(NET.online && NET.conn) netSend({t:'pick',idx:p,key:key});
+  if(NET.online) netSend({t:'pick',idx:p,key:key});
+  stopPickTimer();
   renderPvpSelect();
 }
 function pvpStartBtnClick(){
@@ -2007,7 +2034,7 @@ function netSend(msg){
   NET.pn.publish({ channel:GAME_CH(NET.code), message:{f:NET.myIdx, d:msg} }).catch(()=>{});
 }
 function netClose(){
-  clearInterval(NET._hb); clearTimeout(NET._wd);
+  stopPickTimer(); clearInterval(NET._hb); clearTimeout(NET._wd);
   if(NET.pn) try{ NET.pn.unsubscribeAll(); }catch(e){}
   NET.pn=null; NET.online=false; NET.code=null;
 }
@@ -2160,6 +2187,7 @@ function openPvpForOnline(){
   if($('pvpSelectSub')) $('pvpSelectSub').textContent='🌐 Онлайн-бій. Кожен обирає СВОГО бійця.';
   $('pvpSelect').style.display='block';
   renderPvpSelect();
+  startPickTimer();
 }
 function onPeerGone(){
   if(!NET.online && !NET.code) return;
@@ -2193,7 +2221,7 @@ function netRecv(data){
   if(!data || !data.t) return;
   // ----- lobby -----
   if(data.t==='pick'){ pvpPick[data.idx]=data.key; if($('pvpSelect').style.display!=='none') renderPvpSelect(); return; }
-  if(data.t==='start'){ pvpPick=data.picks; NET.online=true; startPvp(); return; }
+  if(data.t==='start'){ pvpPick=data.picks; NET.online=true; stopPickTimer(); startPvp(); return; }
   if(data.t==='leave'){
     NET.online=false; netClose();
     showMsg('🔌','Суперник вийшов','Гравець залишив гру.','🏠 У меню',()=>{
