@@ -316,6 +316,9 @@
   .charcard .cinfo .ps-hint{color:#5a2d00;font-style:italic;font-size:11px;opacity:1;}
   /* кнопка повернення в меню в шапці бою */
   .topbar .menubtn{padding:5px 12px;margin:0;font-size:13px;}
+  #endBanner{display:none;background:linear-gradient(135deg,#3a1e00dd,#6a3400ee);border-top:3px solid var(--gold);padding:10px 14px;margin-top:10px;border-radius:10px;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  #endBanner.show{display:flex;}
+  #endBanner .end-txt{flex:1;font-weight:bold;color:#ffe97a;font-size:15px;line-height:1.4;}
   .charcard.locked{cursor:default;opacity:.38;filter:grayscale(70%);}
   .charcard.locked:hover{transform:none;filter:grayscale(70%);}
   /* --- coin flip overlay --- */
@@ -607,6 +610,7 @@
   <div class="controls center" id="controls"></div>
 
   <div id="log"></div>
+  <div id="endBanner"><span class="end-txt" id="endBannerText"></span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="endRematchBtn" style="display:none" onclick="startPvp()">🔄 Реванш</button><button class="btn gold" onclick="returnToMenu(true)">🏠 Вийти</button></div></div>
 </div>
 
 </div>
@@ -696,10 +700,10 @@ const ENEMIES = [
     ]
   },
   {
-    key:'owl', name:'Сова', emoji:'🦉', hp:70, move:10,
+    key:'owl', name:'Сова', emoji:'🦉', hp:80, move:10,
     abilities:[
       {id:'fall',    name:'Падіння з пітьми', dmg:45, range:3, special:'tap'},
-      {id:'feather', name:'Кидок пір\'я',     dmg:12, range:5, proj:'🪶', bleed:true},
+      {id:'feather', name:'Кидок пір\'я',     dmg:18, range:5, proj:'🪶', bleed:true},
     ]
   },
   {
@@ -881,7 +885,7 @@ function papaCanvas(displayW, frame, faceLeft){
 const OWL_PAL={
   'B':'#2d1800','b':'#7a4510',
   'T':'#c49830','W':'#f0e8c8',
-  'O':'#e89000','K':'#111111',
+  'O':'#e89000','K':'#111111','G':'#1a1a2e',
   'y':'#f0c000','Y':'#c89000',
 };
 const OWL_SPR=[
@@ -889,10 +893,10 @@ const OWL_SPR=[
   "BBb          bBB",
   "bBBb        bBBb",
   "bBBBb      bBBBb",
-  "bBBBBbTTTTbBBBBb",
-  "bBBBBTOKKOTBBBBb",
-  "bBBBBTKyyKTBBBBb",
-  "bBBBBWWWWWBBBBBb",
+  "bBBBBGTTTGbBBBBb",
+  "bBBBBGOKKOGBBBBb",
+  "bBBBBGKyyKGBBBBb",
+  "bBBBBGWWWGBBBBBb",
   " bBBWWWWWWWBBb  ",
   "  bBWWWbbWWBb   ",
   "  bBWbbbbbWBb   ",
@@ -1337,8 +1341,8 @@ function hurt(target, amount, bleed){
   pop(target,'-'+amount,'#ff5a4a');
   if(bleed) target.fx.bleed=true;
   render();
-  if(target.char&&target.char.key==='owl'&&target.hp>0&&Math.random()<0.15){
-    const _ctrDmg=Math.round(rollDmg(12)*(0.40+Math.random()*0.10));
+  if(target.char&&target.char.key==='owl'&&target.hp>0&&Math.random()<0.35){
+    const _ctrDmg=Math.round(rollDmg(22)*(0.40+Math.random()*0.10));
     const _ctrTgt=(G.mode==='pvp'||G.mode==='practice')?G.players[1-target.side]:G.cat;
     if(_ctrTgt&&_ctrTgt.hp>0){
       setTimeout(()=>{
@@ -1876,6 +1880,7 @@ function showMsg(icon,title,body,btn,cb,btn2,cb2){
   $('ovMsg').classList.add('show');
 }
 function hideMsg(){ $('ovMsg').classList.remove('show'); }
+function showEndBanner(text,rem){ $('endBannerText').innerHTML=text; const rb=$('endRematchBtn'); if(rb)rb.style.display=rem?'':'none'; $('endBanner').classList.add('show'); const lg=$('log'); if(lg)setTimeout(()=>{lg.scrollTop=lg.scrollHeight;},120); }
 function toggleHelp(v){ $('ovHelp').classList.toggle('show',v); }
 
 /* ---------- logging ---------- */
@@ -1944,9 +1949,9 @@ const CHARACTERS=[
     {id:'foot',   name:'🦶 Лапка', cost:1, type:'damage', dmg:15, range:1},
     {id:'quake',  name:'🌋 Сейсмострибок', cost:2, type:'quake', dmg:20, range:6},
   ]},
-  { key:'owl', name:'Сова', emoji:'🦉', hp:70, move:10, passive:{id:'dodge', name:"💨 Ухил 25%: промахи від фіз. атак"}, abilities:[
-    {id:'fall',   name:'🌑 Падіння', cost:2, type:'tap', dmg:45, range:3, goal:12, dur:2600},
-    {id:'feather',name:"🪶 Пір'я", cost:1, type:'damage', dmg:12, range:5, bleed:true, proj:'🪶'},
+  { key:'owl', name:'Сова', emoji:'🦉', hp:80, move:10, passive:{id:'retaliate', name:"🩸 Відплата 35%: б'є у відповідь 22 урону"}, abilities:[
+    {id:'fall',   name:'🌑 Падіння', cost:2, type:'tap', dmg:45, range:3, goal:10, dur:2600},
+    {id:'feather',name:"🪶 Пір'я", cost:1, type:'damage', dmg:18, range:5, bleed:true, proj:'🪶'},
   ]},
   { key:'rat', name:'Криса', emoji:'🐀', hp:111, move:2, abilities:[
     {id:'cheese', name:'🧀 Сир', cost:1, type:'damage', dmg:20, range:6, proj:'🧀'},
@@ -2316,11 +2321,9 @@ async function practiceAiTurn(){
   const body = '<b>'+who+'</b><br>('+w.name+' '+w.emoji+')';
   if(NET.online){
     saveGameResult('online',winnerIdx===NET.myIdx?'win':'loss',G.players[1-NET.myIdx].name,(G.players[NET.myIdx].char||{}).name||'');
-    showMsg('🏆','Кінець бою',body,'🏠 У меню',()=>{ hideMsg(); returnToMenu(true); });
+    showEndBanner('🏆 '+body, false);
   } else {
-    showMsg('🏆','Перемога!',body,
-      '🔄 Реванш',()=>{ hideMsg(); startPvp(); },
-      '🏠 У меню',()=>{ hideMsg(); returnToMenu(true); });
+    showEndBanner('🏆 '+body, true);
   }
 }
 function returnToMenu(skip){
@@ -2331,6 +2334,7 @@ function returnToMenu(skip){
   netClose();
   abort=true;
   hideMsg(); closeSpells(); toggleHelp(false);
+  const eb=$('endBanner'); if(eb)eb.classList.remove('show');
   $('ovTap').classList.remove('show');
   if($('ovCoin')) $('ovCoin').classList.remove('show');
   $('battle').style.display='none';
