@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
@@ -440,7 +440,7 @@
 #loreOverlay.show{display:flex;}
 #statsOverlay{position:fixed;inset:0;z-index:150;background:rgba(10,15,18,.92);display:none;align-items:center;justify-content:center;padding:14px;overflow-y:auto;}
 #statsOverlay.show{display:flex;}
-#statsOverlay .panel{width:100%;max-width:560px;max-height:90vh;overflow-y:auto;}
+#statsOverlay .panel{width:100%;max-width:560px;max-height:calc(100vh - 28px);overflow-y:auto;margin:auto;}
 .hist-row{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--wood);font-size:14px;flex-wrap:wrap;}
 .hist-row:last-child{border-bottom:none;}
 .hist-badge{font-size:11px;font-weight:bold;padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
@@ -545,7 +545,7 @@
 </div>
 
 <div id="topLeftBar">
-  <div id="authUserBadge" onclick="openStats()"></div>
+  <div id="authUserBadge" onclick="toggleStats()"></div>
   <button id="ratingCornerBtn" onclick="openRating()">🏆 Рейтинг</button>
 </div>
 <!-- ===================== MENU ===================== -->
@@ -754,7 +754,7 @@ const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 /* ---------- Enemy definitions ---------- */
 const ENEMIES = [
   {
-    key:'rabbit', name:'Кролик', emoji:'🐇', hp:100, move:2,
+    key:'rabbit', name:'Кролик', emoji:'🐇', hp:100, move:3,
     abilities:[
       {id:'carrot', name:'Морквяна засада', dmg:15, range:6, proj:'🥕', bleed:false},
       {id:'foot',   name:'Кроляча лапка',   dmg:15, range:1, proj:'🦶', bleed:false},
@@ -1078,7 +1078,7 @@ function render(){
 
 /* ---------- Action buttons ---------- */
 function renderControls(){
-  if(G.mode==='pvp'){ renderPvpControls(); return; }
+  if(G.mode==='pvp'||G.mode==='practice'){ renderPvpControls(); return; }
   const cat=G.cat, en=G.enemy, box=$('controls');
   if(G.phase==='setup'){
     box.innerHTML = G.anchors.length>=3
@@ -1105,8 +1105,6 @@ function renderControls(){
       ' title="'+a.title+'" onclick="chooseAction(\''+a.action+'\')">'+a.label+
       (a.cost>0?'<span class="cost">'+a.cost+'</span>':'')+'</button>';
   }
-  html+=mk('📖 Книга','book', playerTurn && me.fx.dizzy===0, 0);
-  html+='<button class="btn red actbtn" '+(playerTurn?'':'disabled')+' onclick="pvpEndTurnBtn()">⏭️ Кінець ходу</button>';
   box.innerHTML=html;
   function b(label,action,on,cost,title){return {label,action,on,cost,title};}
 }
@@ -1115,7 +1113,7 @@ function renderControls(){
 function clearHL(){ document.querySelectorAll('.cell').forEach(c=>c.classList.remove('move','tgt','place','anchorpick')); }
 function renderHighlights(){
   clearHL();
-  if(G.mode==='pvp'){ renderPvpHighlights(); return; }
+  if(G.mode==='pvp'||G.mode==='practice'){ renderPvpHighlights(); return; }
   if(G.phase==='setup'){
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
       if((x===G.cat.x&&y===G.cat.y)||(x===G.enemy.x&&y===G.enemy.y)) continue;
@@ -1171,7 +1169,7 @@ function chooseAction(a){
 
 function onCell(x,y){
   if(G.busy) return;
-  if(G.mode==='pvp'){ onCellPvp(x,y); return; }
+  if(G.mode==='pvp'||G.mode==='practice'){ onCellPvp(x,y); return; }
   if(G.phase==='setup'){ addAnchor(x,y); return; }
   if(G.turn!=='cat'||!G.selected) return;
   const cat=G.cat, en=G.enemy;
@@ -1218,10 +1216,15 @@ function spend(n){
 }
 function dmgMult(u){ if(u.who==='cat') return u.buff.mouse>0?1.3:1; if(u.buff&&u.buff.mouse>0) return 1.3; return u.buff&&u.buff.might>0?1.5:1; }
 /* вилка урону: повертає випадкове число біля base (±~15%, мінімум ±1). Напр. 15 → 13..17 */
+/* synced deterministic RNG for online PvP: host-seeded, reseeded each turn */
+let _combatRng=null;
+function mulberry32(a){ return function(){ a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function rnd(){ return (NET.online && _combatRng) ? _combatRng() : Math.random(); }
+function seedCombatRng(){ if(NET.online){ const n=(G&&G._rngN)||0; _combatRng=mulberry32(((NET.seed>>>0) ^ Math.imul(n+1,0x9E3779B1))>>>0); } }
 function rollDmg(base){
   if(base<=0) return 0;
   const spread=Math.max(1, Math.round(base*0.15));
-  return base - spread + Math.floor(Math.random()*(2*spread+1));
+  return base - spread + Math.floor(rnd()*(2*spread+1));
 }
 
 async function doMove(x,y){
@@ -1398,15 +1401,15 @@ function clash(attacker, victim){
 
 /* ---------- damage / fx helpers ---------- */
 function hurt(target, amount, bleed){
-  if(target.char&&target.char.passive&&target.char.passive.id==='dodge'&&Math.random()<0.25){
+  if(target.char&&target.char.passive&&target.char.passive.id==='dodge'&&rnd()<0.25){
     pop(target,'💨','#00e5ff'); log((target.name||'?')+' — 💨 ухил! промах!'); return;
   }
   target.hp-=amount;
   pop(target,'-'+amount,'#ff5a4a');
   if(bleed) target.fx.bleed=true;
   render();
-  if(target.char&&target.char.key==='owl'&&target.hp>0&&Math.random()<0.35){
-    const _ctrDmg=Math.round(rollDmg(22)*(0.40+Math.random()*0.10));
+  if(target.char&&target.char.key==='owl'&&target.hp>0&&rnd()<0.35){
+    const _ctrDmg=Math.round(rollDmg(22)*(0.40+rnd()*0.10));
     const _ctrTgt=(G.mode==='pvp'||G.mode==='practice')?G.players[1-target.side]:G.cat;
     if(_ctrTgt&&_ctrTgt.hp>0){
       setTimeout(()=>{
@@ -2018,7 +2021,7 @@ const CHARACTERS=[
     {id:'scratch',name:'🐾 Порізи', cost:2, type:'tap', dmg:37, range:3, bleed:true, goal:10, dur:2500},
     {id:'gaze',   name:'👁️ Погляд', cost:1, type:'fear', range:4},
   ]},
-  { key:'rabbit', name:'Кролик', emoji:'🐰', hp:100, move:2, abilities:[
+  { key:'rabbit', name:'Кролик', emoji:'🐰', hp:100, move:3, abilities:[
     {id:'carrot', name:'🥕 Морква', cost:1, type:'damage', dmg:15, range:6, proj:'🥕'},
     {id:'foot',   name:'🦶 Лапка', cost:1, type:'damage', dmg:15, range:1},
     {id:'quake',  name:'🌋 Сейсмострибок', cost:2, type:'quake', dmg:20, range:6},
@@ -2094,7 +2097,11 @@ function pvpStartBtnClick(){
   if(NET.online){
     if(NET.myIdx!==0) return;
     const first=Math.random()<0.5?0:1;   // хост кидає монету, шле результат обом
-    netSend({t:'start',picks:pvpPick,first});
+    const seed=(Math.random()*4294967296)>>>0; NET.seed=seed;
+    // reliable start delivery: retry until guest sends startAck
+    NET._startMsg={t:'start',picks:pvpPick,first,seed}; NET._startAcked=false;
+    let _st=0; const _pushStart=()=>{ if(NET._startAcked||!NET.online){clearTimeout(NET._startRetry);return;} netSend(NET._startMsg); if(++_st<8) NET._startRetry=setTimeout(_pushStart,1200); };
+    _pushStart();
     startPvp(first);
     return;
   }
@@ -2111,14 +2118,15 @@ function makePvpUnit(key,side){
 function startPvp(first){
   if(!(pvpPick[0]&&pvpPick[1])) return;
   // хто ходить першим: онлайн — синхронно від хоста; локально — рандом
-  const starter = (first==null) ? (NET.online ? 0 : (Math.random()<0.5?0:1)) : (first|0);
+  // онлайн: стартер виводимо з СПІЛЬНОГО коду кімнати (обидва знають його без повідомлення) — розсинхрон неможливий
+  const starter = NET.online ? (((parseInt(NET.code,10)||0) + (G&&G._rematch||0)) % 2) : (first==null ? (Math.random()<0.5?0:1) : (first|0));
   abort=false;
   $('menu').style.display='none';
   $('pvpSelect').style.display='none';
   $('battle').style.display='block';
   const p0=makePvpUnit(pvpPick[0],0), p1=makePvpUnit(pvpPick[1],1);
   G={ mode:pvpPractice?'practice':'pvp', phase:'play', players:[p0,p1], cat:p0, enemy:p1,
-      active:0, round:1, actions:3, maxActions:3, selected:null, busy:false,
+      active:0, round:1, actions:3, maxActions:3, selected:null, busy:false, _rngN:0,
       anchors:[], knife:null };
   buildBoard();
   $('missionBadge').textContent=pvpPractice?'🥊 Практика':'⚔️ PvP — 2 гравці';
@@ -2133,6 +2141,7 @@ function startPvp(first){
 }
 function startPvpTurn(idx){
   if(!G||abort) return;
+  G._rngN=(G._rngN||0)+1; seedCombatRng();
   G.active=idx; G.actions=3; G.maxActions=3; G.selected=null; G.busy=false;
   const me=G.players[idx];
   if(me.fx.tail>0){ G.actions--; me.fx.tail=0; log(me.name+': 🐈 Хвіст — −1 дія цього ходу.'); }
@@ -2167,7 +2176,7 @@ function endTurnPvp(){
 }
 function renderPvpControls(){
   const me=G.players[G.active], box=$('controls');
-  const myTurn = !NET.online || G.active===NET.myIdx;
+  const myTurn = NET.online ? (G.active===NET.myIdx) : (G.mode==='practice' ? (G.active===0) : true);
   const playerTurn=!G.busy && G.phase!=='ended' && myTurn;
   const can=c=>playerTurn && G.actions>=c;
   const mk=(label,action,on,cost)=>'<button class="btn actbtn'+(G.selected===action?' gold':'')+'" '+
@@ -2500,7 +2509,7 @@ const LOBBY_CH  = 'mvibes-lobby-v3-g4n';
 const GAME_CH   = c => 'mvibes-game-g4n-' + c;
 const PN_PUB = 'demo', PN_SUB = 'demo';
 
-const NET  = { pn:null, online:false, myIdx:0, code:null, _hb:null, _wd:null, _grace:null };
+const NET  = { pn:null, online:false, myIdx:0, code:null, seed:0, _hb:null, _wd:null, _grace:null };
 let _lobbyPn = null, _lobbyHb = null;
 const lobbyPeers = new Map(); // code → {name, ts}
 
@@ -2510,7 +2519,7 @@ function netSend(msg){
   NET.pn.publish({ channel:GAME_CH(NET.code), message:{f:NET.myIdx, d:msg} }).catch(()=>{});
 }
 function netClose(){
-  stopPickTimer(); clearInterval(NET._hb); clearTimeout(NET._wd); _clearGrace();
+  stopPickTimer(); clearInterval(NET._hb); clearTimeout(NET._wd); _clearGrace(); clearTimeout(NET._startRetry); NET._started=false; NET._startAcked=false;
   if(NET.pn) try{ NET.pn.unsubscribeAll(); }catch(e){}
   NET.pn=null; NET.online=false; NET.code=null;
 }
@@ -2733,7 +2742,8 @@ function netRecv(data){
   if(!data || !data.t) return;
   // ----- lobby -----
   if(data.t==='pick'){ pvpPick[data.idx]=data.key; if($('pvpSelect').style.display!=='none') renderPvpSelect(); return; }
-  if(data.t==='start'){ pvpPick=data.picks; NET.online=true; stopPickTimer(); startPvp(data.first|0); return; }
+  if(data.t==='start'){ if(!NET._started){ NET._started=true; pvpPick=data.picks; if(typeof data.seed!=='undefined') NET.seed=data.seed>>>0; NET.online=true; stopPickTimer(); startPvp(data.first|0); } netSend({t:'startAck'}); return; }
+  if(data.t==='startAck'){ NET._startAcked=true; clearTimeout(NET._startRetry); return; }
   if(data.t==='leave'){
     NET.online=false; netClose();
     showMsg('🔌','Суперник вийшов','Гравець залишив гру.','🏠 У меню',()=>{
@@ -2993,6 +3003,7 @@ window.saveGameResult=async function(mode,result,opponent,character){
     await window._db.ref('users/'+u.nick+'/history').push(entry);
   }catch(e){console.warn('saveGameResult',e);}
 };
+window.toggleStats=function(){var o=document.getElementById('statsOverlay');if(o.classList.contains('show')){o.classList.remove('show');}else{openStats();}};
 window.openStats=async function(){
   const el=document.getElementById('statsContent');
   el.innerHTML='<p class="center muted">Завантаження…</p>';
