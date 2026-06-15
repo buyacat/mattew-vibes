@@ -805,7 +805,7 @@ function placeUnits(){
   }
   updateUnitPos();
 }
-function cellPx(){ const s=getComputedStyle(document.documentElement).getPropertyValue('--cell'); return parseInt(s); }
+function cellPx(){ const b=document.getElementById('board'); if(b&&b.offsetWidth>0) return Math.round(b.offsetWidth/10); return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell'))||64; }
 function updateUnitPos(){
   const c=cellPx();
   for(const u of [G.cat,G.enemy]){
