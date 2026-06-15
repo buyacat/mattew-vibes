@@ -2778,7 +2778,7 @@ window.continueAsGuest=function(){
   const ab2=document.getElementById('authMenuBtns');if(ab2)ab2.style.display='';
 };
 window.openAuth=function(tab){
-
+  document.getElementById('authOverlay').style.display='flex';
   if(typeof switchAuthTab==='function') switchAuthTab(tab||'login');
 };
 window.doLogout=function(){
