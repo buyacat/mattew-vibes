@@ -563,7 +563,7 @@ const ENEMIES = [
     ]
   },
   {
-    key:'owl', name:'Сова', emoji:'🦉', hp:70, move:3,
+    key:'owl', name:'Сова', emoji:'🦉', hp:70, move:10,
     abilities:[
       {id:'fall',    name:'Падіння з пітьми', dmg:45, range:3, special:'tap'},
       {id:'feather', name:'Кидок пір\'я',     dmg:7,  range:5, proj:'🪶', bleed:true},
@@ -706,12 +706,52 @@ function catCanvas(displayW, frame, faceLeft){
   cv.className='px'; cv.style.width=displayW+'px'; cv.style.height=Math.round(displayW*RN/COLS)+'px';
   return cv;
 }
+/* ---------- Папа: кібер-панк єнот з ірокезом ---------- */
+const PAPA_PAL={
+  'M':'#d400ff','m':'#7b00b3',  // neon purple mohawk / shadow
+  'G':'#9e9e9e','g':'#545454',  // grey fur / dark mask
+  'K':'#0d0d0d',                 // black
+  'W':'#efefef',                 // white muzzle
+  'J':'#0d0b18','j':'#1e1640',  // dark cyber jacket
+  'N':'#00e5ff','n':'#006670',  // neon cyan stripe
+};
+const PAPA_TOP=[
+  "      MMM       ",
+  "     MMMMM      ",
+  "    mMMMMMm     ",
+  "    GGGgGGGG    ",
+  "   GGGgGGGgGG   ",
+  "  GGgKGGGGKgGG  ",
+  "  GggKWGGWKggG  ",
+  "  GGgggGGgggGG  ",
+  "   GGGWWWGgGG   ",
+  "    GGGgGGGG    ",
+  "    JJJJJjJJ    ",
+  "   JJNNNjJJJJ   ",
+  "   JJJjJJJJJJ   "];
+const PAPA_LEGS={
+  idle:["    KKKKKKKK    ","    KKK  KKK    ","    KKK  KKK    ",
+        "    KKg  gKK    ","    ggK  Kgg    ","   KKKK  KKKK   ","   KKKK  KKKK   "],
+  step:["    KKKKKKKK    ","   KKK    KKK   ","   KKK    KKK   ",
+        "   KKg    gKK   ","   ggK    Kgg   ","  KKKK    KKKK  ","  KKKK    KKKK  "]};
+function papaCanvas(displayW, frame, faceLeft){
+  const COLS=16, RN=20;
+  const cv=document.createElement('canvas'); cv.width=COLS; cv.height=RN;
+  const ctx=cv.getContext('2d');
+  if(faceLeft){ ctx.translate(COLS,0); ctx.scale(-1,1); }
+  const rows=PAPA_TOP.concat(PAPA_LEGS[frame]||PAPA_LEGS.idle);
+  for(let y=0;y<rows.length;y++){ const r=rows[y];
+    for(let x=0;x<r.length;x++){ const c=PAPA_PAL[r[x]]; if(c){ ctx.fillStyle=c; ctx.fillRect(x,y,1,1); } } }
+  cv.className='px'; cv.style.width=displayW+'px'; cv.style.height=Math.round(displayW*RN/COLS)+'px';
+  return cv;
+}
 function isHeroCat(u){ return !!u && u.who==='cat'; }
 function buildSprite(u, frame){
   const other = (u===G.cat) ? G.enemy : G.cat;
   const right = !!other && other.x > u.x;
   u._right = right;
   if(isHeroCat(u)) return catCanvas(33, frame||'idle', !right);
+  if(u.char && u.char.key==='papa') return papaCanvas(33, frame||'idle', !right);
   return pixelEmoji(u.emoji, 38, 20, right);
 }
 function refreshSprite(u, frame){
@@ -1702,7 +1742,7 @@ const CHARACTERS=[
     {id:'foot',   name:'🦶 Лапка', cost:1, type:'damage', dmg:15, range:1},
     {id:'quake',  name:'🌋 Сейсмострибок', cost:2, type:'quake', dmg:20, range:6},
   ]},
-  { key:'owl', name:'Сова', emoji:'🦉', hp:70, move:3, abilities:[
+  { key:'owl', name:'Сова', emoji:'🦉', hp:70, move:10, abilities:[
     {id:'fall',   name:'🌑 Падіння', cost:2, type:'tap', dmg:45, range:3, goal:12, dur:2600},
     {id:'feather',name:"🪶 Пір'я", cost:1, type:'damage', dmg:7, range:5, bleed:true, proj:'🪶'},
   ]},
