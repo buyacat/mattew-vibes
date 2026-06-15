@@ -573,7 +573,7 @@ const ENEMIES = [
     ]
   },
   {
-    key:'rat', name:'Гігантська Криса', emoji:'🐀', hp:175, move:2, boss:true,
+    key:'rat', name:'Гігантська Криса', emoji:'🐀', hp:111, move:2, boss:true,
     abilities:[
       {id:'cheese', name:'Кидок сиру',  dmg:20, range:6, proj:'🧀', bleed:false},
       {id:'bite',   name:'Кривавий укус', dmg:25, range:1, proj:'🦷', bleed:true},
@@ -1684,11 +1684,12 @@ const CHARACTERS=[
     {id:'fall',   name:'🌑 Падіння', cost:2, type:'tap', dmg:45, range:3, goal:12, dur:2600},
     {id:'feather',name:"🪶 Пір'я", cost:1, type:'damage', dmg:7, range:5, bleed:true, proj:'🪶'},
   ]},
-  { key:'rat', name:'Криса', emoji:'🐀', hp:175, move:2, abilities:[
+  { key:'rat', name:'Криса', emoji:'🐀', hp:111, move:2, abilities:[
     {id:'cheese', name:'🧀 Сир', cost:1, type:'damage', dmg:20, range:6, proj:'🧀'},
     {id:'bite',   name:'🦷 Укус', cost:1, type:'damage', dmg:25, range:1, bleed:true},
     {id:'trash',  name:'🗑️ Смітник', cost:1, type:'buff'},
   ]},
+
 ];
 
 function openPvp(){
