@@ -271,7 +271,9 @@
     align-items:center;justify-content:center;z-index:50;padding:16px;}
   .overlay.show{display:flex;}
   .modal{max-width:460px;text-align:center;}
-  .tapbtn{font-size:30px;padding:26px 40px;border-radius:20px;}
+  .tapbtn{font-size:30px;padding:26px 40px;border-radius:20px;touch-action:none;}
+  /* кожен тач реєструється миттєво — без double-tap zoom / групування жестів */
+  #ovTap, #ovTap .panel, #ovTap .tapbtn{touch-action:none;-ms-touch-action:none;}
   /* ---------- Coin toss (3D-фліп) ---------- */
   .coinStage{perspective:900px;height:170px;display:flex;align-items:center;justify-content:center;margin:14px 0 6px;}
   .coin{position:relative;width:140px;height:140px;transform-style:preserve-3d;cursor:pointer;will-change:transform;}
@@ -1647,12 +1649,17 @@ function tapChallenge({title,duration,goal,sub}){
     $('tapMeter').style.width='0%';
     $('tapTime').style.width='100%';
     $('ovTap').classList.add('show');
-    let _tapT=-99;
-    const onTap=()=>{ if(done)return; const _t=performance.now(); if(_t-_tapT<30)return; _tapT=_t; taps++; $('tapMeter').style.width=Math.min(100,100*taps/goal)+'%';
+    let _lastTouch=-9999;
+    const bump=()=>{ if(done)return; taps++; $('tapMeter').style.width=Math.min(100,100*taps/goal)+'%';
       if(taps>=goal) finish(); };
-    $('ovTap').addEventListener('pointerdown',onTap);
-    $('ovTap').addEventListener('touchstart',onTap,{passive:true});
-    const onKey=()=>{ if(!done) onTap(); };
+    // тач: рахуємо кожен новий дотик (підтримка мульти-тача); миша окремо
+    const onTouch=(e)=>{ _lastTouch=performance.now(); if(done)return;
+      const n=(e.changedTouches&&e.changedTouches.length)||1;
+      for(let i=0;i<n;i++) bump(); };
+    const onMouse=()=>{ if(performance.now()-_lastTouch<700)return; bump(); }; // ігнор синтетичну мишу після тача
+    $('ovTap').addEventListener('touchstart',onTouch,{passive:true});
+    $('ovTap').addEventListener('mousedown',onMouse);
+    const onKey=()=>{ if(!done) bump(); };
     document.addEventListener('keydown',onKey);
     const start=performance.now();
     const tick=setInterval(()=>{
@@ -1662,7 +1669,7 @@ function tapChallenge({title,duration,goal,sub}){
     },50);
     function finish(){
       if(done)return; done=true; clearInterval(tick);
-      $('ovTap').removeEventListener('pointerdown',onTap); $('ovTap').removeEventListener('touchstart',onTap); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
+      $('ovTap').removeEventListener('touchstart',onTouch); $('ovTap').removeEventListener('mousedown',onMouse); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
       resolve({taps,success:taps>=goal});
     }
   });
