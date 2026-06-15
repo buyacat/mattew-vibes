@@ -380,33 +380,29 @@
 
 <!-- ===================== PvP ONLINE LOBBY ===================== -->
 <div id="pvpOnline" class="panel">
-  <div class="center">
-    <h1>🌐 PvP ОНЛАЙН</h1>
-  </div>
-  <div id="onlineHome" class="center">
-    <p class="muted">Грай із другом через інтернет на різних пристроях.</p>
+  <div class="center"><h1>🌐 PvP ОНЛАЙН</h1></div>
+  <!-- ім'я -->
+  <div id="onlineName" class="center">
+    <p class="muted">Введи своє ім'я — тебе бачитимуть в лобі.</p>
+    <input id="nameInput" class="codeinput" style="font-size:24px;letter-spacing:2px;width:260px;max-width:90%" maxlength="12" placeholder="Гравець">
     <div style="margin-top:10px">
-      <button class="btn gold" onclick="onlineCreate()">🆕 Створити гру</button>
-      <button class="btn green" onclick="onlineShowJoin()">🔗 Доєднатись за кодом</button>
-    </div>
-    <div style="margin-top:10px">
-      <button class="btn" onclick="backToMenuFromOnline()">↩️ Назад у меню</button>
-    </div>
-  </div>
-  <div id="onlineHost" class="center" style="display:none">
-    <p>Передай цей код другові:</p>
-    <div id="onlineCode" class="bigcode">— — —</div>
-    <p class="muted" id="onlineHostStatus">Підключення до сервера…</p>
-    <button class="btn" onclick="backToMenuFromOnline()">↩️ Скасувати</button>
-  </div>
-  <div id="onlineJoin" class="center" style="display:none">
-    <p>Введи код суперника (3 цифри):</p>
-    <input id="onlineCodeInput" class="codeinput" inputmode="numeric" maxlength="3" placeholder="000">
-    <div style="margin-top:10px">
-      <button class="btn gold" onclick="onlineConnect()">🔗 Підключитись</button>
+      <button class="btn gold" onclick="onlineEnterName()">▶ У лобі</button>
       <button class="btn" onclick="backToMenuFromOnline()">↩️ Назад</button>
     </div>
-    <p class="muted" id="onlineJoinStatus"></p>
+  </div>
+  <!-- лобі -->
+  <div id="onlineLobby" style="display:none">
+    <p class="muted center">Хто чекає суперника прямо зараз:</p>
+    <div id="lobbyList" style="min-height:64px;margin-bottom:10px"></div>
+    <div class="center">
+      <button class="btn gold" onclick="onlineCreate()">📢 Шукати суперника</button>
+      <button class="btn" onclick="backToMenuFromOnline()">↩️ Назад</button>
+    </div>
+  </div>
+  <!-- очікування / підключення -->
+  <div id="onlineHost" class="center" style="display:none">
+    <p id="onlineHostStatus" class="muted" style="font-size:16px">Очікування…</p>
+    <button class="btn" onclick="backToMenuFromOnline()">↩️ Скасувати</button>
   </div>
 </div>
 
@@ -543,7 +539,7 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+<script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.4.5.min.js"></script>
 <script>
 "use strict";
 /* ============================================================
@@ -1980,7 +1976,7 @@ function returnToMenu(skip){
   if(!skip && G && G.phase!=='ended'){
     if(!confirm('Вийти в меню? Поточний бій буде втрачено.')) return;
   }
-  if(NET.online && NET.conn) netSend({t:'leave'});
+  if(NET.online) netSend({t:'leave'});
   netClose();
   abort=true;
   hideMsg(); closeSpells(); toggleHelp(false);
@@ -1994,106 +1990,170 @@ function returnToMenu(skip){
 }
 
 /* ============================================================
-   PvP ОНЛАЙН — P2P через PeerJS (код-кімната, релей ходів)
+   PvP ОНЛАЙН — PubNub релей (без P2P, без WebRTC)
    ============================================================ */
-const NET = { peer:null, conn:null, online:false, myIdx:0, code:null };
-const PEER_PREFIX = 'gnizdo-pvp-2026-';
+let myName = '';
+const LOBBY_CH  = 'mvibes-lobby-v2';
+const GAME_CH   = c => 'mvibes-game-' + c;
+const PN_PUB = 'demo', PN_SUB = 'demo';
 
-function netCanSend(){ return NET.online && NET.conn && NET.conn.open && G && G.mode==='pvp' && G.active===NET.myIdx; }
-function netSend(msg){ if(NET.conn && NET.conn.open){ try{ NET.conn.send(msg); }catch(e){} } }
-function netClose(){
-  try{ if(NET.conn) NET.conn.close(); }catch(e){}
-  try{ if(NET.peer) NET.peer.destroy(); }catch(e){}
-  NET.conn=null; NET.peer=null; NET.online=false;
+const NET  = { pn:null, online:false, myIdx:0, code:null, _hb:null, _wd:null };
+let _lobbyPn = null, _lobbyHb = null;
+const lobbyPeers = new Map(); // code → {name, ts}
+
+function netCanSend(){ return NET.online && G && G.mode==='pvp' && G.active===NET.myIdx; }
+function netSend(msg){
+  if(!NET.pn || !NET.code) return;
+  NET.pn.publish({ channel:GAME_CH(NET.code), message:{f:NET.myIdx, d:msg} }).catch(()=>{});
 }
+function netClose(){
+  clearInterval(NET._hb); clearTimeout(NET._wd);
+  if(NET.pn) try{ NET.pn.unsubscribeAll(); }catch(e){}
+  NET.pn=null; NET.online=false; NET.code=null;
+}
+function _resetWd(){
+  clearTimeout(NET._wd);
+  NET._wd = setTimeout(()=>{ if(NET.online) onPeerGone(); }, 22000);
+}
+function _stopLobby(){
+  clearInterval(_lobbyHb);
+  if(_lobbyPn) try{ _lobbyPn.unsubscribeAll(); }catch(e){}
+  _lobbyPn=null; _lobbyHb=null;
+}
+function _pn(uuid){ return new PubNub({ publishKey:PN_PUB, subscribeKey:PN_SUB, uuid }); }
 
+/* ---------- відкрити онлайн-розділ ---------- */
 function openOnline(){
   netClose();
   $('menu').style.display='none';
   $('pvpSelect').style.display='none';
   $('battle').style.display='none';
   $('pvpOnline').style.display='block';
-  showOnlinePane('home');
+  if(myName){ startLobby(); } else { showOnlinePane('name'); }
 }
 function showOnlinePane(which){
-  $('onlineHome').style.display = which==='home'?'block':'none';
-  $('onlineHost').style.display = which==='host'?'block':'none';
-  $('onlineJoin').style.display = which==='join'?'block':'none';
+  ['name','lobby','host'].forEach(k=>{
+    const el=$('online'+k[0].toUpperCase()+k.slice(1)); if(el) el.style.display=(k===which)?'block':'none';
+  });
+}
+function onlineEnterName(){
+  myName = ($('nameInput').value||'').trim() || 'Гравець';
+  startLobby();
 }
 function backToMenuFromOnline(){
+  _stopLobby();
+  if(NET.code) netSend({t:'leave'});
   netClose();
   $('pvpOnline').style.display='none';
   $('menu').style.display='block';
 }
-function peerLibReady(){ return (typeof Peer !== 'undefined'); }
 
+/* ---------- ЛОБІ ---------- */
+function startLobby(){
+  lobbyPeers.clear();
+  showOnlinePane('lobby');
+  renderLobby();
+  _stopLobby();
+  _lobbyPn = _pn('lb-'+Math.random().toString(36).slice(2));
+  _lobbyPn.addListener({ message: e=>{
+    if(!e.message) return;
+    const d=e.message;
+    if(d.t==='host'){ lobbyPeers.set(d.code,{name:d.name,ts:Date.now()}); renderLobby(); }
+    else if(d.t==='cancel'){ lobbyPeers.delete(d.code); renderLobby(); }
+  }});
+  _lobbyPn.subscribe({ channels:[LOBBY_CH] });
+  // Прибираємо застарілі записи (старше 14 с)
+  _lobbyHb = setInterval(()=>{
+    const now=Date.now(); let changed=false;
+    for(const [k,v] of lobbyPeers){ if(now-v.ts>14000){ lobbyPeers.delete(k); changed=true; } }
+    if(changed) renderLobby();
+  }, 5000);
+}
+function renderLobby(){
+  const el=$('lobbyList'); if(!el) return;
+  if(!lobbyPeers.size){
+    el.innerHTML='<p class="muted center" style="padding:14px">Нікого немає — оголоси свою гру!</p>'; return;
+  }
+  el.innerHTML=[...lobbyPeers.entries()].map(([code,{name}])=>
+    `<div class="charcard" style="margin-bottom:8px">
+      <div class="cface">🐱</div>
+      <div class="cinfo"><b>${name}</b><small>чекає суперника…</small></div>
+      <button class="btn green" style="margin-left:auto;padding:7px 14px" onclick="onlineJoinLobby('${code}','${name.replace(/'/g,'\\'+'\'').replace(/</g,'&lt;')}')">⚔️ Грати</button>
+    </div>`
+  ).join('');
+}
+
+/* ---------- ХОСТ: оголосити гру ---------- */
 function onlineCreate(){
-  if(!peerLibReady()){ alert('Бібліотека PeerJS не завантажилась — перевір інтернет і онови сторінку.'); return; }
+  _stopLobby();
   netClose();
   NET.myIdx=0;
-  const code = '777'; // ТЕСТ: фіксований код (поверни на random для релізу)
+  const code=String(Math.floor(Math.random()*900)+100);
   NET.code=code;
   showOnlinePane('host');
-  $('onlineCode').textContent = code.split('').join(' ');
-  $('onlineHostStatus').textContent = 'Підключення до сервера…';
-  const peer = new Peer(PEER_PREFIX+code, {debug:1, config:{iceServers:[
-    {urls:'stun:stun.l.google.com:19302'},
-    {urls:'stun:stun1.l.google.com:19302'},
-    {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
-    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
-  ]}});
-  NET.peer=peer;
-  peer.on('open', ()=>{ $('onlineHostStatus').textContent = 'Очікування суперника… Скинь код другові.'; });
-  peer.on('error', (err)=>{
-    if(err && err.type==='unavailable-id'){ $('onlineHostStatus').textContent='Код зайнятий, генерую новий…'; setTimeout(onlineCreate,400); }
-    else $('onlineHostStatus').textContent = 'Помилка: '+((err&&err.type)||'зв\'язку');
-  });
-  peer.on('connection', (conn)=>{
-    if(NET.conn && NET.conn.open){ try{ conn.close(); }catch(e){} return; }  // вже зайнято
-    NET.conn=conn; wireConn(conn, true);
-  });
+  $('onlineHostStatus').textContent='📢 '+myName+' шукає суперника…';
+
+  // Оголошуємо в лобі кожні 5 с
+  const announce=()=>{
+    if(_lobbyPn) try{_lobbyPn.unsubscribeAll();}catch(e){}
+    _lobbyPn=_pn('ann-'+code);
+    _lobbyPn.publish({channel:LOBBY_CH, message:{t:'host',name:myName,code}}).catch(()=>{});
+  };
+  announce();
+  _lobbyHb=setInterval(announce, 5000);
+
+  // Слухаємо канал гри
+  NET.pn=_pn('h-'+code);
+  NET.pn.addListener({ message: e=>{
+    if(!e.message || e.message.f===0) return;
+    const d=e.message.d;
+    if(d.t==='join'){
+      _stopLobby();
+      _lobbyPn=_pn('cl-'+code);
+      _lobbyPn.publish({channel:LOBBY_CH,message:{t:'cancel',code}}).catch(()=>{});
+      NET.online=true;
+      clearInterval(NET._hb);
+      NET._hb=setInterval(()=>netSend({t:'ping'}),5000);
+      _resetWd();
+      $('onlineHostStatus').textContent='✅ Підключився '+d.name+'!';
+      setTimeout(()=>{ netSend({t:'welcome'}); openPvpForOnline(); }, 400);
+    } else if(d.t==='ping'){ _resetWd(); }
+    else if(d.t==='leave'){ onPeerGone(); }
+    else { try{ netRecv(d); }catch(err){ console.error(err); } }
+  }});
+  NET.pn.subscribe({ channels:[GAME_CH(code)] });
 }
-function onlineShowJoin(){
-  showOnlinePane('join');
-  $('onlineJoinStatus').textContent='';
-  $('onlineCodeInput').value='';
-  setTimeout(()=>{ try{ $('onlineCodeInput').focus(); }catch(e){} }, 60);
-}
-function onlineConnect(){
-  if(!peerLibReady()){ alert('Бібліотека PeerJS не завантажилась — перевір інтернет і онови сторінку.'); return; }
-  const code=(($('onlineCodeInput').value)||'').replace(/\D/g,'').slice(0,3);
-  if(code.length!==3){ $('onlineJoinStatus').textContent='Введи 3 цифри.'; return; }
+
+/* ---------- ГІСТЬ: прийняти заявку з лобі ---------- */
+function onlineJoinLobby(code, hostName){
+  _stopLobby();
   netClose();
   NET.myIdx=1; NET.code=code;
-  $('onlineJoinStatus').textContent='Підключення…';
-  const peer=new Peer({debug:1, config:{iceServers:[
-    {urls:'stun:stun.l.google.com:19302'},
-    {urls:'stun:stun1.l.google.com:19302'},
-    {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
-    {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
-  ]}});
-  NET.peer=peer;
-  peer.on('open', ()=>{
-    const conn=peer.connect(PEER_PREFIX+code, {reliable:true});
-    NET.conn=conn; wireConn(conn, false);
-    $('onlineJoinStatus').textContent='З\'єднання з кодом '+code+'…';
-  });
-  peer.on('error', (err)=>{
-    const t=(err&&err.type)||'';
-    $('onlineJoinStatus').textContent = (t==='peer-unavailable') ? 'Кімнату не знайдено — перевір код.' : ('Помилка: '+(t||'зв\'язку'));
-  });
+  showOnlinePane('host');
+  $('onlineHostStatus').textContent='⏳ Підключення до '+hostName+'…';
+
+  NET.pn=_pn('g-'+code+'-'+Math.floor(Math.random()*1e4));
+  NET.pn.addListener({ message: e=>{
+    if(!e.message || e.message.f===1) return;
+    const d=e.message.d;
+    if(d.t==='welcome'){ NET.online=true; clearInterval(NET._hb); NET._hb=setInterval(()=>netSend({t:'ping'}),5000); _resetWd(); openPvpForOnline(); }
+    else if(d.t==='ping'){ _resetWd(); }
+    else if(d.t==='leave'){ onPeerGone(); }
+    else { try{ netRecv(d); }catch(err){ console.error(err); } }
+  }});
+  NET.pn.subscribe({ channels:[GAME_CH(code)] });
+
+  // Надсилаємо join (кілька разів, щоб точно дійшло)
+  const tryJoin=(n=0)=>{
+    NET.pn.publish({channel:GAME_CH(code), message:{f:1,d:{t:'join',name:myName}}}).catch(()=>{});
+    if(n<6 && !NET.online) NET._wd=setTimeout(()=>{ if(!NET.online) tryJoin(n+1); }, 2500);
+  };
+  setTimeout(()=>tryJoin(), 500);
 }
-function wireConn(conn, isHost){
-  conn.on('open', ()=>{
-    NET.online=true;
-    openPvpForOnline();
-  });
-  conn.on('data', (data)=>{ try{ netRecv(data); }catch(e){ console.error('net',e); } });
-  conn.on('close', ()=>{ onPeerGone(); });
-  conn.on('error', ()=>{ onPeerGone(); });
-}
+
 function openPvpForOnline(){
   pvpPick=[null,null];
+  _stopLobby();
   $('pvpOnline').style.display='none';
   $('menu').style.display='none';
   $('battle').style.display='none';
@@ -2102,11 +2162,11 @@ function openPvpForOnline(){
   renderPvpSelect();
 }
 function onPeerGone(){
-  if(!NET.online && !(NET.conn)) return;
+  if(!NET.online && !NET.code) return;
   const wasOnline=NET.online;
   netClose();
   if(!wasOnline) return;
-  showMsg('🔌','З\'єднання втрачено','Суперник від\'єднався або зник зв\'язок.','🏠 У меню',()=>{
+  showMsg('🔌','З\'єднання втрачено','Суперник від\'єднався.','🏠 У меню',()=>{
     hideMsg();
     $('battle').style.display='none'; $('pvpSelect').style.display='none'; $('pvpOnline').style.display='none';
     $('menu').style.display='block'; G=null; abort=true;
