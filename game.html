@@ -300,6 +300,7 @@
   .charcard .cinfo{min-width:0;}
   .charcard .cinfo b{font-size:16px;}
   .charcard .cinfo small{display:block;opacity:.82;font-size:12px;line-height:1.35;}
+  .charcard .cinfo .ps-hint{color:#5a2d00;font-style:italic;font-size:11px;opacity:1;}
   /* кнопка повернення в меню в шапці бою */
   .topbar .menubtn{padding:5px 12px;margin:0;font-size:13px;}
   .charcard.locked{cursor:default;opacity:.38;filter:grayscale(70%);}
@@ -1180,6 +1181,9 @@ function clash(attacker, victim){
 
 /* ---------- damage / fx helpers ---------- */
 function hurt(target, amount, bleed){
+  if(target.char&&target.char.passive&&target.char.passive.id==='dodge'&&Math.random()<0.25){
+    pop(target,'💨','#00e5ff'); log((target.name||'?')+' — 💨 ухил! промах!'); return;
+  }
   target.hp-=amount;
   pop(target,'-'+amount,'#ff5a4a');
   if(bleed) target.fx.bleed=true;
@@ -1765,7 +1769,7 @@ const CHARACTERS=[
     {id:'foot',   name:'🦶 Лапка', cost:1, type:'damage', dmg:15, range:1},
     {id:'quake',  name:'🌋 Сейсмострибок', cost:2, type:'quake', dmg:20, range:6},
   ]},
-  { key:'owl', name:'Сова', emoji:'🦉', hp:70, move:10, abilities:[
+  { key:'owl', name:'Сова', emoji:'🦉', hp:70, move:10, passive:{id:'dodge', name:"💨 Ухил 25%: промахи від фіз. атак"}, abilities:[
     {id:'fall',   name:'🌑 Падіння', cost:2, type:'tap', dmg:45, range:3, goal:12, dur:2600},
     {id:'feather',name:"🪶 Пір'я", cost:1, type:'damage', dmg:7, range:5, bleed:true, proj:'🪶'},
   ]},
@@ -1774,7 +1778,7 @@ const CHARACTERS=[
     {id:'bite',   name:'🦷 Укус', cost:1, type:'damage', dmg:25, range:1, bleed:true},
     {id:'trash',  name:'🗑️ Смітник', cost:1, type:'buff'},
   ]},
-  { key:'papa', name:'Папа', emoji:'🦝', hp:90, move:3, abilities:[
+  { key:'papa', name:'Папа', emoji:'🦝', hp:90, move:3, passive:{id:'close_bonus', name:"🔥 Впритул: +20% якщо ворог ближче 4 клітин"}, abilities:[
     {id:'laptop', name:'💻 Ноутбук-бумеранг', cost:1, type:'boomerang', range:10},
   ]},
 
@@ -1806,7 +1810,7 @@ function renderPvpSelect(){
         '<div class="cface'+(c.key==='papa'?' papa-spr':'')+'">'+( c.key==='papa'?'':c.emoji)+'</div>'+
         '<div class="cinfo"><b>'+c.name+'</b>'+
         '<small>❤️ '+c.hp+' · 🏃 рух '+c.move+'</small>'+
-        '<small>'+ab+'</small></div></div>';
+        '<small>'+ab+'</small>'+(c.passive?'<small class="ps-hint">🛡 '+c.passive.name+'</small>':'')+'</div></div>';
     }).join('');
     box.querySelectorAll('.papa-spr').forEach(el=>el.appendChild(papaCanvas(40,'idle',false)));
   }
