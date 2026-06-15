@@ -1711,6 +1711,9 @@ const CHARACTERS=[
     {id:'bite',   name:'🦷 Укус', cost:1, type:'damage', dmg:25, range:1, bleed:true},
     {id:'trash',  name:'🗑️ Смітник', cost:1, type:'buff'},
   ]},
+  { key:'papa', name:'Папа', emoji:'🦝', hp:90, move:3, abilities:[
+    {id:'laptop', name:'💻 Ноутбук-бумеранг', cost:1, type:'boomerang', range:10},
+  ]},
 
 ];
 
@@ -1973,6 +1976,12 @@ function pvpAbility(ab){
     });
     return;
   }
+  if(ab.type==='boomerang'){
+    const dmg=Math.floor(Math.random()*100)+1;
+    if(netCanSend()) netSend({t:'boom',id:ab.id,dmg});
+    applyBoomerang(ab,dmg);
+    return;
+  }
   const d=cheb(me,foe);
   let base=ab.dmg;
   if(ab.scale) base=clamp(Math.round(10*d/7),2,10);
@@ -2201,6 +2210,26 @@ function onPeerGone(){
   });
 }
 function findActiveAb(id){ return (G && G.players) ? G.players[G.active].char.abilities.find(a=>a.id===id) : null; }
+function applyBoomerang(ab, dmg){
+  if(!G||abort) return;
+  G.busy=true;
+  const me=G.players[G.active], foe=G.players[1-G.active];
+  spend(ab.cost);
+  punch(me); clash(me,foe);
+  projectile(me,foe,'💻');
+  setTimeout(()=>{
+    if(abort||!G) return;
+    projectile(foe,me,'💻');
+    setTimeout(()=>{
+      if(abort||!G) return;
+      shake(foe);
+      hurt(foe,dmg,false);
+      const sfx = dmg>=90?' 💥 КРИТ!!!':dmg<=10?' 😅 ледь долетів…':'';
+      log(me.name+': 💻 Ноутбук-бумеранг — <b>'+dmg+'</b> урону!'+sfx);
+      if(G&&!abort&&G.phase!=='ended'){ G.busy=false; pvpAfter(); }
+    },390);
+  },390);
+}
 function applyTapResult(ab,dmg,taps){
   if(!G||abort) return;
   const me=G.players[G.active], foe=G.players[1-G.active];
@@ -2240,6 +2269,7 @@ function netRecv(data){
     case 'bandage': pvpBandage(); break;
     case 'tap': { const ab=findActiveAb(data.id); if(ab){ G.busy=true; applyTapResult(ab, data.dmg, data.taps); } break; }
     case 'endTurn': endTurnPvp(); break;
+    case 'boom': { const ab=findActiveAb(data.id); if(ab) applyBoomerang(ab,data.dmg); break; }
   }
 }
 
