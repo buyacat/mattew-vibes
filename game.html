@@ -831,7 +831,7 @@ function catCanvas(displayW, frame, faceLeft){
 }
 /* ---------- Дідько Ден: кібер-панк єнот з ірокезом ---------- */
 const PAPA_PAL={
-  'M':'#d400ff','m':'#7b00b3',  // neon purple mohawk / shadow
+  'M':'#ff2d96','m':'#b00060',  // neon purple mohawk / shadow
   'G':'#9e9e9e','g':'#545454',  // grey fur / dark mask
   'K':'#0d0d0d',                 // black
   'W':'#efefef',                 // white muzzle
@@ -2768,6 +2768,7 @@ function loginOk(nick,stats){
   badge.style.display='block';
   const sb=document.getElementById('statsBtn');if(sb)sb.style.display='';
   const ni=document.getElementById('nameInput');if(ni)ni.value=nick;
+  myName=nick;
   const ab=document.getElementById('authMenuBtns');if(ab)ab.style.display='none';
 }
 window.continueAsGuest=function(){
