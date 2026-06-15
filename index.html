@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mattew Vibes</title>
 <style>
   :root{
@@ -17,7 +17,8 @@
     /* трохи кіберпанк-нуар неону 80-х */
     --neon:#39e6ff; --neon2:#ff4fa3;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation;}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   html,body{margin:0;height:100%;}
   body{
     font-family:'Trebuchet MS','Segoe UI',Verdana,sans-serif;
@@ -347,6 +348,26 @@
     .avatar{flex-basis:44px;width:44px;height:44px;font-size:26px;}
     .fighter{padding:6px 9px;gap:8px;}
     .vs{display:none;}
+  }
+  @media (max-width:480px){
+    :root{--cell:clamp(28px,8.5vw,34px);}
+    body{padding:6px;}
+    .panel{padding:10px;border-radius:10px;}
+    h1{font-size:16px;letter-spacing:1px;}
+    h2{font-size:14px;}
+    .btn{padding:8px 10px;font-size:13px;margin:3px;}
+    .topbar{gap:4px;margin-bottom:6px;}
+    .topbar .menubtn{padding:4px 8px;font-size:12px;}
+    .badge{padding:3px 8px;font-size:11px;}
+    .vsbar{gap:6px;margin-bottom:7px;}
+    .fighter{padding:4px 6px;gap:5px;border-radius:10px;border-width:2px;}
+    .avatar{flex-basis:36px;width:36px;height:36px;font-size:22px;}
+    .hpbar{height:12px;margin:2px 0;}
+    .controls{margin-top:6px;}
+    .actbtn{font-size:12px;padding:7px 8px;}
+    .codeinput{font-size:28px;letter-spacing:8px;}
+    .row{gap:6px;}
+    #musicBtn{width:40px;height:40px;font-size:18px;top:6px;right:6px;}
   }
 </style>
 </head>
