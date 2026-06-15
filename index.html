@@ -2229,7 +2229,7 @@ function pvpAbility(ab){
     return;
   }
   if(ab.type==='boomerang'){
-    let dmg=Math.floor(Math.random()*31)+10;
+    let dmg=Math.floor(Math.random()*21)+15;
     const passiveBonus=me.char&&me.char.key==='papa'&&cheb(me,foe)<4;
     if(passiveBonus) dmg=Math.round(dmg*1.2);
     if(netCanSend()) netSend({t:'boom',id:ab.id,dmg,passiveBonus});
