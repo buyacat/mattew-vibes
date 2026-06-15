@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
@@ -1421,10 +1421,8 @@ function tapChallenge({title,duration,goal,sub}){
     $('tapMeter').style.width='0%';
     $('tapTime').style.width='100%';
     $('ovTap').classList.add('show');
-    const btn=$('tapBtn');
     const onTap=()=>{ if(done)return; taps++; $('tapMeter').style.width=Math.min(100,100*taps/goal)+'%';
       if(taps>=goal) finish(); };
-    btn.onclick=onTap;
     $('ovTap').addEventListener('pointerdown',onTap);
     const onKey=()=>{ if(!done) onTap(); };
     document.addEventListener('keydown',onKey);
@@ -1436,7 +1434,7 @@ function tapChallenge({title,duration,goal,sub}){
     },50);
     function finish(){
       if(done)return; done=true; clearInterval(tick);
-      btn.onclick=null; $('ovTap').removeEventListener('pointerdown',onTap); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
+      $('ovTap').removeEventListener('pointerdown',onTap); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
       resolve({taps,success:taps>=goal});
     }
   });
@@ -2004,7 +2002,7 @@ function pvpAbility(ab){
   }
   if(ab.type==='tap'){
     G.busy=true; render();
-    tapChallenge({title:ab.name+' — тисни ПРОБІЛ!',duration:ab.dur,goal:ab.goal,sub:'Натискай якнайшвидше!'})
+    tapChallenge({title:ab.name+' — тапай!',duration:ab.dur,goal:ab.goal,sub:'Тап по екрану або клавіша — якнайшвидше!'})
       .then(res=>{
         if(abort||!G) return;
         const frac=clamp(res.taps/ab.goal,0,1);
