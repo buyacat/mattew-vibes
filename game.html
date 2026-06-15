@@ -1614,9 +1614,11 @@ function tapChallenge({title,duration,goal,sub}){
     $('tapMeter').style.width='0%';
     $('tapTime').style.width='100%';
     $('ovTap').classList.add('show');
-    const onTap=()=>{ if(done)return; taps++; $('tapMeter').style.width=Math.min(100,100*taps/goal)+'%';
+    let _tapT=-99;
+    const onTap=()=>{ if(done)return; const _t=performance.now(); if(_t-_tapT<30)return; _tapT=_t; taps++; $('tapMeter').style.width=Math.min(100,100*taps/goal)+'%';
       if(taps>=goal) finish(); };
     $('ovTap').addEventListener('pointerdown',onTap);
+    $('ovTap').addEventListener('touchstart',onTap,{passive:true});
     const onKey=()=>{ if(!done) onTap(); };
     document.addEventListener('keydown',onKey);
     const start=performance.now();
@@ -1627,7 +1629,7 @@ function tapChallenge({title,duration,goal,sub}){
     },50);
     function finish(){
       if(done)return; done=true; clearInterval(tick);
-      $('ovTap').removeEventListener('pointerdown',onTap); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
+      $('ovTap').removeEventListener('pointerdown',onTap); $('ovTap').removeEventListener('touchstart',onTap); document.removeEventListener('keydown',onKey); $('ovTap').classList.remove('show');
       resolve({taps,success:taps>=goal});
     }
   });
